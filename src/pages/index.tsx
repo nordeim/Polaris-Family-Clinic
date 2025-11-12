@@ -11,17 +11,17 @@ export default function HomePage() {
         alignItems: 'center'
       }}
     >
-      <Stack spacing="xl">
+      <Stack gap="xl">
         <Title order={1}>Gabriel Family Clinic</Title>
         <Text size="lg">
           One clinic. One simple system. One happy patient.
         </Text>
         <Text>
-          This is the official booking and queue companion for Gabriel Family Clinic. 
+          This is the official booking and queue companion for Gabriel Family Clinic.
           Designed for seniors, caregivers, and our clinic team — simple, clear, and safe.
         </Text>
 
-        <Stack spacing="md">
+        <Stack gap="md">
           <Link href="/book" passHref legacyBehavior>
             <Button component="a" size="lg">
               Book an Appointment
