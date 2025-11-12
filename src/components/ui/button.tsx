@@ -1,31 +1,40 @@
+import Link, { LinkProps } from 'next/link';
 import { Button, ButtonProps } from '@mantine/core';
 import clsx from 'clsx';
+import type { ReactNode } from 'react';
 
 type UiButtonVariant = 'primary' | 'outline' | 'ghost' | 'subtle';
 type UiButtonSize = 'sm' | 'md' | 'lg';
 
-export interface UiButtonProps extends ButtonProps {
+type AnchorLikeProps = {
+  href?: LinkProps['href'];
+};
+
+export interface UiButtonProps extends ButtonProps, AnchorLikeProps {
   variant?: UiButtonVariant;
   size?: UiButtonSize;
   fullWidth?: boolean;
+  children: ReactNode;
 }
 
 /**
  * UiButton
  *
- * Thin wrapper around Mantine Button to:
- * - Apply shared design tokens from src/styles/tokens.css.
- * - Keep landing + app buttons visually consistent and senior-friendly.
- *
- * Notes:
- * - Uses className / data attributes for styling via CSS tokens.
- * - Avoids over-abstracting Mantine; just a stable surface for this project.
+ * Design objectives:
+ * - Senior-friendly pill button with clear hierarchy.
+ * - Minimal Mantine visual noise: rely on .ui-btn* classes from tokens.css.
+ * - Correct link semantics:
+ *    - If href is provided:
+ *        - Wrap in Next.js <Link> and render <a> as the clickable element.
+ *    - Otherwise:
+ *        - Render as standard <button>.
  */
 export function UiButton(props: UiButtonProps) {
   const {
     variant = 'primary',
     size = 'md',
     fullWidth,
+    href,
     className,
     children,
     ...rest
@@ -46,8 +55,32 @@ export function UiButton(props: UiButtonProps) {
     className
   );
 
+  // If href is provided, render as a real link wrapped in Next.js Link.
+  if (href) {
+    return (
+      <Link href={href} legacyBehavior passHref>
+        <Button
+          component="a"
+          className={classes}
+          // Keep Mantine styling minimal to let ui-btn* drive the look
+          variant="subtle"
+          radius="xl"
+          {...rest}
+        >
+          {children}
+        </Button>
+      </Link>
+    );
+  }
+
+  // Fallback: plain button
   return (
-    <Button className={classes} {...rest}>
+    <Button
+      className={classes}
+      variant="subtle"
+      radius="xl"
+      {...rest}
+    >
       {children}
     </Button>
   );
