@@ -1,3 +1,5 @@
+$ rm -rf .next/
+
 $ npm run build
 
 > gabriel-clinic-mvp@1.0.0 build
@@ -17,7 +19,7 @@ $ npm run build
  ✓ Finalizing page optimization    
 
 Route (pages)                             Size     First Load JS
-┌ ○ /                                     12 kB           100 kB
+┌ ○ /                                     16.5 kB         105 kB
 ├   /_app                                 0 B            88.2 kB
 ├ ○ /404                                  180 B          88.4 kB
 ├ ƒ /api/appointments/book.post           0 B            88.2 kB
@@ -31,7 +33,7 @@ Route (pages)                             Size     First Load JS
 + First Load JS shared by all             89.4 kB
   ├ chunks/framework-64ad27b21261a9ce.js  44.8 kB
   ├ chunks/main-b14011096fd3702e.js       34.7 kB
-  └ other shared chunks (total)           9.84 kB
+  └ other shared chunks (total)           9.86 kB
 
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
@@ -51,5 +53,4 @@ $ npm run start
  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
  ⚠ The static directory has been deprecated in favor of the public directory. https://nextjs.org/docs/messages/static-dir-deprecated
  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
- ✓ Ready in 1156ms
-
+ ✓ Ready in 1141ms
