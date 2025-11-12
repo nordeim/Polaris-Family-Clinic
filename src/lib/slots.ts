@@ -71,12 +71,8 @@ export async function getAvailableSlots(
   ];
 
   // 3) Load existing appointments for that doctor/day to exclude booked slots
-  const startOfDayUtc = windows[0].clone().startOf('day').utc().toISOString();
-  const endOfDayUtc = windows[windows.length - 1]
-    .clone()
-    .endOf('day')
-    .utc()
-    .toISOString();
+  const startOfDayUtc = windows[0].start.utc().toISOString();
+  const endOfDayUtc = windows[windows.length - 1].end.utc().toISOString();
 
   const { data: appts, error: apptsError } = await supabaseServer
     .from('appointments')
