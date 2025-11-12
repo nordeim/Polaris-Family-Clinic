@@ -59,16 +59,7 @@ export function UiButton(props: UiButtonProps) {
   if (href) {
     return (
       <Link href={href} legacyBehavior passHref>
-        <Button
-          component="a"
-          className={classes}
-          // Keep Mantine styling minimal to let ui-btn* drive the look
-          variant="subtle"
-          radius="xl"
-          {...rest}
-        >
-          {children}
-        </Button>
+        <a className={classes}>{children}</a>
       </Link>
     );
   }

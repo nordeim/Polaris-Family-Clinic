@@ -31,81 +31,57 @@ import { Section } from '@/components/ui/section';
  * - Uses shared UI primitives (UiButton, UiCard, UiBadge, Section) + Mantine layout.
  */
 
+import { PublicHeader } from '@/components/layout/PublicHeader';
+
 export default function HomePage() {
   return (
-    <main>
-      {/* Hero / Header */}
-      <Section variant="default">
-        <Container size="lg">
-          <Stack gap="lg">
-            {/* Top nav / logo row */}
-            <Group justify="space-between" align="center">
-              <Group gap="xs">
-                <UiBadge variant="soft">Gabriel Family Clinic</UiBadge>
-                <Text size="xs" c="dimmed">
-                  Family GP &middot; Tampines, Singapore
-                </Text>
-              </Group>
-
-              <Group gap="xs" visibleFrom="sm">
-                <Link href="/book" passHref legacyBehavior>
-                  <UiButton variant="outline" size="sm">
-                    Book
-                  </UiButton>
-                </Link>
-                <Link href="/profile" passHref legacyBehavior>
-                  <UiButton variant="ghost" size="sm">
-                    My Profile
-                  </UiButton>
-                </Link>
-                <Link href="/staff/appointments" passHref legacyBehavior>
-                  <UiButton variant="subtle" size="sm">
-                    Staff Portal
-                  </UiButton>
-                </Link>
-              </Group>
-            </Group>
+    <>
+      <PublicHeader />
+      <main>
+        {/* Hero */}
+        <Section id="hero" variant="default">
+          <Container size="lg">
+            <Stack gap="lg">
+            {/* Hero grid */}
 
             <Grid gutter="xl" align="stretch">
               {/* Left: Hero copy */}
               <Grid.Col span={{ base: 12, md: 7 }}>
                 <Stack gap="md">
-                  <Text size="xs" c="dimmed">
-                    One clinic. One simple system. One happy patient.
+                  <Text size="xs" c="dimmed" className="eyebrow">
+                    One clinic. One simple system.
                   </Text>
                   <Title order={1}>
-                    A calm, clear way to visit your neighborhood doctor.
+                    Clinic care, made simple{' '}
+                    <span className="text-highlight">for everyone.</span>
                   </Title>
-                  <Text size="md" c="dimmed">
-                    Built for seniors, caregivers, and our clinic team. Book
-                    appointments in a few taps, avoid long waits, and always
-                    know what's happening next.
+                  <Text size="sm" className="hero-subtitle">
+                    From grandma's check-up to your busy workday flu visit,
+                    Gabriel Family Clinic keeps booking and waiting simple,
+                    clear, and friendly for our neighborhood.
                   </Text>
 
                   {/* Primary CTAs */}
-                  <Group gap="md" mt="sm">
-                    <Link href="/book" passHref legacyBehavior>
-                      <UiButton size="lg">Book an appointment</UiButton>
-                    </Link>
-                    <Link href="/profile" passHref legacyBehavior>
-                      <UiButton variant="outline" size="lg">
-                        View / update my profile
-                      </UiButton>
-                    </Link>
-                  </Group>
+                  <div className="hero-actions">
+                    <UiButton href="/book" size="lg" variant="primary">
+                      Book an Appointment
+                    </UiButton>
+                    <a
+                      href="#seniors"
+                      className="btn btn-outline btn-large"
+                    >
+                      View Queue & Patient Guide
+                    </a>
+                  </div>
 
-                  {/* Supporting points */}
-                  <Group gap="md" mt="sm" wrap="wrap">
-                    <UiBadge variant="soft">
-                      Easy for seniors & caregivers
-                    </UiBadge>
-                    <UiBadge variant="outline">
-                      PDPA-conscious, secure records
-                    </UiBadge>
-                    <UiBadge variant="outline">
-                      One clinic, no confusing apps
-                    </UiBadge>
-                  </Group>
+                  <div className="hero-trust">
+                    <div className="badge-soft">
+                      Designed for seniors & caregivers
+                    </div>
+                    <div className="hero-note">
+                      Simple screens, big text, no apps to install.
+                    </div>
+                  </div>
                 </Stack>
               </Grid.Col>
 
@@ -113,66 +89,63 @@ export default function HomePage() {
               <Grid.Col span={{ base: 12, md: 5 }}>
                 <Stack gap="sm">
                   <UiCard elevated className="hero-card">
-                    <Text size="xs" c="dimmed">
-                      Quick overview
-                    </Text>
-                    <Title order={3} fz="lg">
-                      Today at Gabriel Family Clinic
-                    </Title>
-                    <Text size="sm" mt={4}>
-                      Booking and queue information shown here is a preview.
-                      Actual times appear after you book.
-                    </Text>
-                    <Divider my="sm" />
-                    <Group justify="space-between">
-                      <Stack gap={2}>
-                        <Text size="xs" c="dimmed">
-                          Next available slot
-                        </Text>
-                        <Text size="md" fw={600}>
-                          09:15 AM &ndash; Dr Tan
-                        </Text>
-                      </Stack>
-                      <Stack gap={2} align="flex-end">
-                        <Text size="xs" c="dimmed">
-                          Now serving
-                        </Text>
-                        <Text size="md" fw={600}>
-                          A012
-                        </Text>
-                      </Stack>
-                    </Group>
-                    <Divider my="sm" />
-                    <Stack gap={4}>
-                      <Text size="xs" c="dimmed">
-                        How it works:
-                      </Text>
-                      <ul className="list-check">
-                        <li>Book a time that suits you.</li>
-                        <li>Arrive a little before your slot.</li>
-                        <li>Watch the queue number on-screen at reception.</li>
-                      </ul>
-                    </Stack>
-                    <Link href="/book" passHref legacyBehavior>
-                      <UiButton fullWidth size="md" style={{ marginTop: '0.5rem' }}>
-                        Start booking now
-                      </UiButton>
-                    </Link>
+                    <div className="hero-card-header">
+                      <div>
+                        <div className="hero-card-title">
+                          Quick Booking Preview
+                        </div>
+                        <div className="hero-card-subtitle">
+                          See how easy it feels in our real app.
+                        </div>
+                      </div>
+                      <span className="hero-card-pill">2 min</span>
+                    </div>
+                    <div className="hero-card-body">
+                      <label className="field-label">Select Doctor</label>
+                      <div className="field-select">
+                        <span>Dr Tan (Family Physician)</span>
+                        <span className="chevron">⌄</span>
+                      </div>
+                      <label className="field-label">Choose Date</label>
+                      <div className="field-select">
+                        <span>Today, 3:15 PM</span>
+                        <span className="chevron">📅</span>
+                      </div>
+                      <label className="field-label">Your Name</label>
+                      <input
+                        className="field-input"
+                        type="text"
+                        placeholder="E.g. Mdm Tan Ah Lian"
+                      />
+                      <button className="btn btn-primary btn-full mt-2">
+                        Confirm Booking
+                      </button>
+                      <div className="hero-card-footnote">
+                        You'll receive a confirmation and gentle reminders.
+                        No password, no clutter.
+                      </div>
+                    </div>
                   </UiCard>
 
                   <UiCard className="hero-mini-card">
-                    <Text size="xs" c="dimmed">
-                      For our staff & doctors
-                    </Text>
-                    <Text size="sm">
-                      Use the Staff Portal to see today's appointments,
-                      update statuses, and keep the waiting room calm.
-                    </Text>
-                    <Link href="/staff/appointments" passHref legacyBehavior>
-                      <UiButton variant="subtle" size="sm" style={{ marginTop: '0.25rem' }}>
-                        Go to Staff Portal
-                      </UiButton>
-                    </Link>
+                    <div className="hero-mini-label">Live Queue Snapshot</div>
+                    <div className="hero-mini-items">
+                      <div className="hero-mini-item">
+                        <div className="mini-label">Now Seeing</div>
+                        <div className="mini-value">A012</div>
+                      </div>
+                      <div className="hero-mini-item">
+                        <div className="mini-label">You're Next</div>
+                        <div className="mini-value text-positive">A013</div>
+                      </div>
+                      <div className="hero-mini-item">
+                        <div className="mini-label">Est. Wait</div>
+                        <div className="mini-value">8 mins</div>
+                      </div>
+                    </div>
+                    <div className="hero-mini-note">
+                      In the real system, this updates live for patients and staff.
+                    </div>
                   </UiCard>
                 </Stack>
               </Grid.Col>
@@ -182,36 +155,42 @@ export default function HomePage() {
       </Section>
 
       {/* Why Us */}
-      <Section variant="alt">
+      <Section id="why" variant="alt">
         <Container size="lg">
-          <Grid gutter="xl" align="flex-start">
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Title order={2}>Why this system works for our patients</Title>
-              <Text size="sm" c="dimmed" mt="xs">
-                We built this with our seniors in mind:
+          <div className="section-header">
+            <Title order={2}>Why Gabriel Family Clinic</Title>
+            <Text size="sm">
+              Built with our neighbors in mind: clear, calm, and respectful of your time.
+            </Text>
+          </div>
+          <div className="grid-three">
+            <UiCard elevated className="feature-card">
+              <div className="feature-icon">🧓</div>
+              <Title order={3}>Senior-friendly by design</Title>
+              <Text size="sm">
+                Large text, high contrast, simple steps. No app downloads, no confusing menus.
               </Text>
-              <ul className="list-check">
-                <li>Large, readable text. Clear buttons.</li>
-                <li>No passwords to remember &mdash; simple secure login.</li>
-                <li>Clear instructions at every step.</li>
-              </ul>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Title order={3} fz="lg">
-                And for our clinic team
-              </Title>
-              <ul className="list-check">
-                <li>Today's appointments in one clean view.</li>
-                <li>Simple queue numbers, no messy paper lists.</li>
-                <li>Built on Supabase & Next.js for reliability.</li>
-              </ul>
-            </Grid.Col>
-          </Grid>
+            </UiCard>
+            <UiCard elevated className="feature-card">
+              <div className="feature-icon">⏱️</div>
+              <Title order={3}>Shorter, calmer waits</Title>
+              <Text size="sm">
+                Book ahead or walk in – see your queue number and estimated wait clearly.
+              </Text>
+            </UiCard>
+            <UiCard elevated className="feature-card">
+              <div className="feature-icon">🔒</div>
+              <Title order={3}>Privacy built in</Title>
+              <Text size="sm">
+                IDs are masked, data is protected, and access follows clinical best practices.
+              </Text>
+            </UiCard>
+          </div>
         </Container>
       </Section>
 
       {/* How It Works */}
-      <Section variant="default">
+      <Section id="how" variant="default">
         <Container size="lg">
           <Title order={2}>How it works (for patients)</Title>
           <Grid gutter="lg" mt="md">
@@ -255,88 +234,156 @@ export default function HomePage() {
         </Container>
       </Section>
 
-      {/* Seniors-first + Staff section */}
-      <Section variant="alt">
+      {/* For Seniors & Families */}
+      <Section id="seniors" variant="alt">
         <Container size="lg">
-          <Grid gutter="lg">
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Title order={2}>Designed for seniors</Title>
-              <Text size="sm" c="dimmed" mt="xs">
-                Simple words, big buttons, no clutter. If you can use WhatsApp,
-                you can use this.
+          <div className="seniors-grid">
+            <div>
+              <Title order={2}>Made for seniors and families</Title>
+              <Text className="lead">
+                Your parents and grandparents deserve calm, not chaos.
               </Text>
               <ul className="list-check">
-                <li>Mobile-friendly and readable.</li>
-                <li>Works on clinic tablet with staff assistance.</li>
-                <li>Step-by-step guidance for first-time users.</li>
+                <li>Simple screens you can read at a glance.</li>
+                <li>No passwords to remember – secure links instead.</li>
+                <li>Caregivers can help manage appointments easily.</li>
+                <li>Clear queue info so no one has to stand and wait.</li>
               </ul>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Title order={2}>Built for one clinic</Title>
-              <Text size="sm" c="dimmed" mt="xs">
-                No multi-clinic complexity. Everything is tuned for Gabriel
-                Family Clinic's daily flow.
-              </Text>
-              <ul className="list-check">
-                <li>Reception sees today's appointments.</li>
-                <li>Doctors see who is next without noise.</li>
-                <li>Queue numbers stay predictable and calm.</li>
-              </ul>
-            </Grid.Col>
-          </Grid>
-        </Container>
-      </Section>
-
-      {/* CTA Section */}
-      <Section variant="cta">
-        <Container size="lg">
-          <Grid gutter="lg" align="center">
-            <Grid.Col span={{ base: 12, md: 8 }}>
-              <Title order={2}>
-                Ready to book your next visit with Gabriel Family Clinic?
+            </div>
+            <UiCard elevated className="seniors-card">
+              <Title order={3} className="seniors-card-title">
+                “Ah Ma can see her queue number!”
               </Title>
-              <Text size="sm" mt="xs">
-                Start with a simple profile, choose your doctor, and pick a time
-                that works for you.
+              <Text className="seniors-card-quote">
+                “The staff just showed us this screen. Now my mum can sit and rest
+                while I check her turn on my phone. Very thoughtful.”
               </Text>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 4 }}>
-              <Stack gap="xs">
-                <Link href="/book" passHref legacyBehavior>
-                  <UiButton fullWidth size="lg" variant="primary">
-                    Book an appointment
-                  </UiButton>
-                </Link>
-                <Link href="/profile" passHref legacyBehavior>
-                  <UiButton fullWidth size="md" variant="outline">
-                    View / update my profile
-                  </UiButton>
-                </Link>
-                <Link href="/staff/appointments" passHref legacyBehavior>
-                  <UiButton fullWidth size="sm" variant="ghost">
-                    Staff / doctor portal
-                  </UiButton>
-                </Link>
-              </Stack>
-            </Grid.Col>
-          </Grid>
+              <div className="seniors-card-meta">
+                – A daughter of a regular patient
+              </div>
+            </UiCard>
+          </div>
         </Container>
       </Section>
 
-      {/* Footer */}
+      {/* For Staff */}
       <Section variant="default">
         <Container size="lg">
-          <Stack gap="xs">
-            <Text size="xs" c="dimmed">
-              Gabriel Family Clinic &middot; 123 Tampines Street 11, #01-456,
-              Singapore
-            </Text>
-            <Text size="xs" c="dimmed">
-              For real medical emergencies, please call 995 or visit the nearest hospital.
-            </Text>
-          </Stack>
+          <div className="staff-grid">
+            <div>
+              <Title order={2}>Built to make clinic teams happier too</Title>
+              <Text className="lead">
+                One clean dashboard for front-desk and doctors.
+              </Text>
+              <ul className="list-check">
+                <li>See today's appointments and walk-ins at a glance.</li>
+                <li>Assign queue numbers with one tap.</li>
+                <li>Reduce repeated questions at the counter.</li>
+                <li>Keep patients informed without extra calls.</li>
+              </ul>
+            </div>
+            <UiCard elevated className="staff-card">
+              <div className="staff-label">Staff Portal Preview</div>
+              <div className="staff-row">
+                <span>10:00 AM – Mdm Tan Ah Lian</span>
+                <span className="badge-soft">Arrived · A013</span>
+              </div>
+              <div className="staff-row">
+                <span>10:15 AM – Mr Lee Wei Jian</span>
+                <span className="badge-soft">Booked</span>
+              </div>
+              <div className="staff-row">
+                <span>10:30 AM – Walk-in</span>
+                <span className="badge-soft">In Queue</span>
+              </div>
+              <div className="staff-note">
+                The real system uses secure staff login with live data.
+              </div>
+            </UiCard>
+          </div>
         </Container>
       </Section>
+
+      {/* CTA Section / Book */}
+      <Section id="book" variant="cta">
+        <Container size="lg">
+          <div className="cta-container">
+            <div>
+              <Title order={2}>
+                Ready to make visits calmer for everyone?
+              </Title>
+              <Text>
+                Start with simple online booking and a clear queue. We'll handle
+                the details so you can focus on care.
+              </Text>
+            </div>
+            <div className="cta-actions">
+              <a href="#hero" className="btn btn-primary btn-large">
+                Try the booking experience
+              </a>
+              <a href="#contact" className="btn btn-outline btn-large">
+                Talk to our clinic team
+              </a>
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      {/* Contact / Footer */}
+      <Section id="contact" variant="alt">
+        <Container size="lg">
+          <div className="contact-grid">
+            <div>
+              <Title order={3}>Gabriel Family Clinic</Title>
+              <Text>
+                123 Sample Street, #01-234
+                <br />
+                Singapore 123456
+              </Text>
+              <Text>Tel: +65 6000 0000</Text>
+            </div>
+            <div>
+              <Title order={4}>Hours</Title>
+              <Text size="sm">
+                Mon–Fri: 8:30 AM – 1:00 PM, 2:00 PM – 5:30 PM
+                <br />
+                Sat: 8:30 AM – 1:00 PM
+                <br />
+                Sun & PH: Closed
+              </Text>
+            </div>
+            <div>
+              <Title order={4}>Quick Links</Title>
+              <ul className="footer-links">
+                <li>
+                  <a href="#hero">Home</a>
+                </li>
+                <li>
+                  <a href="#why">Why Us</a>
+                </li>
+                <li>
+                  <a href="#how">How It Works</a>
+                </li>
+                <li>
+                  <a href="#seniors">For Seniors</a>
+                </li>
+                <li>
+                  <a href="#book">Book</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Container>
+      </Section>
+      <footer className="site-footer">
+        <Container size="lg" className="footer-inner">
+          <div>© Gabriel Family Clinic. All rights reserved.</div>
+          <div className="footer-sub">
+            This is a design mockup of the digital companion experience.
+          </div>
+        </Container>
+      </footer>
     </main>
+    </>
   );
 }
