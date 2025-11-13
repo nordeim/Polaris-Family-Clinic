@@ -16,9 +16,19 @@ awesome meticulous planning and execution! please keep up the good work! now, pl
 
 ---
 
+awesome meticulous analysis and planning! please use the same rigorous and meticulous approach as you did for the Booking flow implementation to meticulously proceed to execute and complete the next phase in your implementaion plan outlined for "the staff portal and queue management model". before updating an existing file or creating a new file, please mentally map the file out with a description of changes/features needed and map out a checklist to match the file requirements. always validate the file updated/created against its checklist. we don't want regression defects after implementation or any subsequent rework. 
+
 awesome meticulous planning and execution! please keep up the good work! yes, please meticulously proceed to execute and complete the next phase in your implementaion plan.
 
 awesome meticulous planning and execution! please keep up the good work! yes, please meticulously proceed to execute and complete the remaining phase in your implementaion plan for the end-to-end Booking flow/functionality.
+
+---
+
+awesome job with your meticulous planning and execution! as a major checkpoint, please meticulously run type/lint and build test, then meticulously plan and fix any new syntax errors.
+
+please set up and run individual file lint test yourself before I run the final complete build.
+
+---
 
 awesome meticulous planning! yes, please meticulously proceed according to your plan.
 
