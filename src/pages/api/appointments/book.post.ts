@@ -1,34 +1,37 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import dayjs from 'dayjs';
-import { requireAuth } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabaseServer';
-import { BookAppointmentSchema } from '@/lib/validation';
+import { requireAuth } from '@/lib/auth';
+import {
+  BookAppointmentSchema,
+  validateOrThrow
+} from '@/lib/validation';
 
 /**
  * POST /api/appointments/book.post
  *
- * Body:
- * - doctor_id: string (uuid)
- * - scheduled_start: string (ISO datetime)
- *
- * Behavior:
- * - Auth required.
- * - Validates input with BookAppointmentSchema.
- * - Ensures a patient_profiles row exists for the caller.
- * - Inserts a new appointment in "booked" status.
- * - Returns the created appointment.
+ * Responsibilities:
+ * - Authenticated patient books an appointment.
+ * - Enforce:
+ *   - Caller is authenticated (Supabase Auth).
+ *   - Caller has an existing patient_profiles row.
+ *   - doctor_id & scheduled_start are valid (Zod).
+ *   - scheduled_start is a currently free slot for that doctor.
+ * - Return:
+ *   - 201 + appointment summary on success.
  *
  * Notes:
- * - Queue number is assigned later when staff marks "arrived".
- * - Twilio notifications are integrated in a later phase via notifications.ts.
+ * - RLS:
+ *   - appointments_insert_patient policy ensures patient_id matches auth.uid() mapping.
+ * - This handler is intentionally explicit and boring for auditability.
  */
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ): Promise<void> {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).end();
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
@@ -40,61 +43,95 @@ export default async function handler(
     return;
   }
 
-  const parsed = BookAppointmentSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({
-      error: 'Invalid input',
-      details: parsed.error.flatten()
-    });
+  let input;
+  try {
+    input = validateOrThrow(BookAppointmentSchema, req.body);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Invalid request payload' });
     return;
   }
 
-  const { doctor_id, scheduled_start } = parsed.data;
-  const start = dayjs(scheduled_start);
-  if (!start.isValid()) {
-    res.status(400).json({ error: 'Invalid scheduled_start' });
-    return;
-  }
+  const { doctor_id, scheduled_start, reason } = input;
 
   try {
-    // Ensure patient_profile exists
+    // 1) Resolve patient_profile for this user
     const { data: profile, error: profileError } = await supabaseServer
       .from('patient_profiles')
-      .select('id')
+      .select('id, full_name')
       .eq('user_id', user.id)
       .single();
 
     if (profileError || !profile) {
-      res.status(400).json({ error: 'Patient profile not found' });
+      res
+        .status(400)
+        .json({ error: 'Patient profile not found. Please complete your profile first.' });
       return;
     }
 
-    // Create appointment
-    const { data: appt, error: apptError } = await supabaseServer
+    // 2) Basic doctor validation (active doctor exists)
+    const { data: doctor, error: doctorError } = await supabaseServer
+      .from('doctors')
+      .select('id, is_active')
+      .eq('id', doctor_id)
+      .single();
+
+    if (doctorError || !doctor || doctor.is_active === false) {
+      res.status(400).json({ error: 'Selected doctor is not available.' });
+      return;
+    }
+
+    // 3) Prevent double-booking: check existing appointment with same doctor & slot
+    const { data: existing, error: existingError } = await supabaseServer
+      .from('appointments')
+      .select('id')
+      .eq('doctor_id', doctor_id)
+      .eq('scheduled_start', scheduled_start)
+      .limit(1);
+
+    if (existingError) {
+      // eslint-disable-next-line no-console
+      console.error('Error checking existing appointments', existingError);
+      res.status(500).json({ error: 'Failed to validate slot availability.' });
+      return;
+    }
+
+    if (existing && existing.length > 0) {
+      res.status(409).json({
+        error:
+          'This time slot has just been taken. Please choose another available slot.'
+      });
+      return;
+    }
+
+    // 4) Insert appointment (RLS will ensure patient_id/auth.uid linkage correctness)
+    const { data: appt, error: insertError } = await supabaseServer
       .from('appointments')
       .insert({
         patient_id: profile.id,
         doctor_id,
-        scheduled_start: start.toISOString(),
-        status: 'booked'
+        scheduled_start,
+        status: 'booked',
+        reason: reason || null
       })
-      .select('id, patient_id, doctor_id, scheduled_start, status, queue_number')
+      .select('id, scheduled_start, status, doctor_id')
       .single();
 
-    if (apptError || !appt) {
+    if (insertError || !appt) {
       // eslint-disable-next-line no-console
-      console.error('Error creating appointment:', apptError);
-      res.status(500).json({ error: 'Failed to create appointment' });
+      console.error('Error creating appointment', insertError);
+      res.status(500).json({ error: 'Failed to create appointment.' });
       return;
     }
 
+    // 5) Best-effort: further integrations (notifications) are handled in a later phase.
+    //    Do NOT block booking on Twilio/side effects.
+
     res.status(201).json({
-      success: true,
       appointment: appt
     });
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('Unexpected error in appointments/book.post:', e);
+    console.error('Unexpected error in book.post', e);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
