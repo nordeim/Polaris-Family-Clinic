@@ -65,7 +65,7 @@ export function PublicHeader() {
 
           <a
             href="#book"
-            className="btn btn-primary btn-small nav-cta"
+            className="ui-btn ui-btn--primary ui-btn--sm nav-cta"
             onClick={close}
           >
             Book Now

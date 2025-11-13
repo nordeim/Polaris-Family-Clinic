@@ -183,9 +183,17 @@
 /* Misc helpers for landing */
 
 .nav-link {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--color-text-muted);
   text-decoration: none;
+  padding: 0.35rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.nav-link:hover {
+  color: var(--color-text-main);
+  border-color: #93c5fd;
 }
 
 .nav-link:hover {
@@ -529,7 +537,12 @@
 }
 
 /* Responsive adjustments to mirror static mockup */
-@media (max-width: 840px) {
+@media (max-width: 900px) {
+  /* Stack hero and sections vertically with comfortable spacing */
+  .ui-section {
+    padding: 3.25rem 0;
+  }
+
   .grid-three {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -540,6 +553,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Mobile nav: hide inline links, show dropdown when toggled */
   .nav-links {
     position: absolute;
     top: 64px;
@@ -565,4 +579,6 @@
   .nav-toggle {
     display: flex;
   }
+
+  /* Hide desktop CTAs group on small screens, Mantine handles via visibleFrom */
 }

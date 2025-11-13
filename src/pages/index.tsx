@@ -113,7 +113,7 @@ export default function HomePage() {
                         type="text"
                         placeholder="E.g. Mdm Tan Ah Lian"
                       />
-                      <button className="btn btn-primary btn-full mt-2">
+                      <button className="ui-btn ui-btn--primary ui-btn--full mt-2">
                         Confirm Booking
                       </button>
                       <div className="hero-card-footnote">
@@ -314,7 +314,7 @@ export default function HomePage() {
               </Text>
             </div>
             <div className="cta-actions">
-              <a href="#hero" className="btn btn-primary btn-large">
+              <a href="#hero" className="ui-btn ui-btn--primary ui-btn--lg">
                 Try the booking experience
               </a>
               <a href="#contact" className="ui-btn ui-btn--outline ui-btn--lg">

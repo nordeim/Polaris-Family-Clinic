@@ -5,9 +5,6 @@ $ npm run build
 > gabriel-clinic-mvp@1.0.0 build
 > next build
 
- ⚠ Invalid next.config.js options detected: 
- ⚠     Invalid literal value, expected false at "i18n.localeDetection"
- ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
   ▲ Next.js 14.2.33
 
  ✓ Linting and checking validity of types    
@@ -19,21 +16,21 @@ $ npm run build
  ✓ Finalizing page optimization    
 
 Route (pages)                             Size     First Load JS
-┌ ○ /                                     16.5 kB         105 kB
-├   /_app                                 0 B            88.2 kB
-├ ○ /404                                  180 B          88.4 kB
-├ ƒ /api/appointments/book.post           0 B            88.2 kB
-├ ƒ /api/appointments/mine.get            0 B            88.2 kB
-├ ƒ /api/doctors/index.get                0 B            88.2 kB
-├ ƒ /api/patient/profile.get              0 B            88.2 kB
-├ ƒ /api/patient/profile.put              0 B            88.2 kB
-├ ƒ /api/slots/index.get                  0 B            88.2 kB
-├ ƒ /api/staff/appointment-status.post    0 B            88.2 kB
-└ ƒ /api/staff/appointments.get           0 B            88.2 kB
-+ First Load JS shared by all             89.5 kB
+┌ ○ /                                     17.1 kB         105 kB
+├   /_app                                 0 B            88.3 kB
+├ ○ /404                                  180 B          88.5 kB
+├ ƒ /api/appointments/book.post           0 B            88.3 kB
+├ ƒ /api/appointments/mine.get            0 B            88.3 kB
+├ ƒ /api/doctors/index.get                0 B            88.3 kB
+├ ƒ /api/patient/profile.get              0 B            88.3 kB
+├ ƒ /api/patient/profile.put              0 B            88.3 kB
+├ ƒ /api/slots/index.get                  0 B            88.3 kB
+├ ƒ /api/staff/appointment-status.post    0 B            88.3 kB
+└ ƒ /api/staff/appointments.get           0 B            88.3 kB
++ First Load JS shared by all             90.4 kB
   ├ chunks/framework-64ad27b21261a9ce.js  44.8 kB
   ├ chunks/main-b14011096fd3702e.js       34.7 kB
-  └ other shared chunks (total)           9.95 kB
+  └ other shared chunks (total)           10.8 kB
 
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
@@ -48,9 +45,6 @@ $ npm run start
   - Local:        http://localhost:3000
 
  ✓ Starting...
- ⚠ Invalid next.config.js options detected: 
- ⚠     Invalid literal value, expected false at "i18n.localeDetection"
- ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
  ⚠ The static directory has been deprecated in favor of the public directory. https://nextjs.org/docs/messages/static-dir-deprecated
  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
- ✓ Ready in 1143ms
+ ✓ Ready in 1132ms
