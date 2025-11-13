@@ -1,16 +1,12 @@
-import Link from 'next/link';
 import {
   Container,
   Stack,
-  Group,
   Title,
   Text,
-  Grid,
-  Divider
+  Grid
 } from '@mantine/core';
 import { UiButton } from '@/components/ui/button';
 import { UiCard } from '@/components/ui/card';
-import { UiBadge } from '@/components/ui/badge';
 import { Section } from '@/components/ui/section';
 
 /**

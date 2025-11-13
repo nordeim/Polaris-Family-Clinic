@@ -25,7 +25,9 @@ const nextConfig = {
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'zh', 'ms', 'ta'],
-    localeDetection: true
+    // Use a proper boolean as required by Next.js. This also silences the
+    // "Invalid literal value, expected false at i18n.localeDetection" warning.
+    localeDetection: false
   },
 
   images: {

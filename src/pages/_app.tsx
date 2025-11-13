@@ -1,20 +1,30 @@
 import type { AppProps } from 'next/app';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, createTheme } from '@mantine/core';
 
 import '@/styles/globals.css';
+import '@/styles/tokens.css';
+
+/**
+ * Theme tuned to align Mantine base with the static landing mockup:
+ * - Inter for body text.
+ * - DM Sans for headings.
+ * - Softer default radius and neutral palette.
+ * - Container width aligned with design (1120px via CSS).
+ */
+const gabrielTheme = createTheme({
+  fontFamily: "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+  headings: {
+    fontFamily:
+      "DM Sans, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    fontWeight: '600'
+  },
+  primaryColor: 'blue',
+  defaultRadius: 'md'
+});
 
 export default function GabrielClinicApp({ Component, pageProps }: AppProps) {
   return (
-    <MantineProvider
-      theme={{
-        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-        primaryColor: 'blue',
-        defaultRadius: 'md',
-        headings: {
-          fontWeight: '700'
-        }
-      }}
-    >
+    <MantineProvider theme={gabrielTheme} withNormalizeCSS>
       <Component {...pageProps} />
     </MantineProvider>
   );
