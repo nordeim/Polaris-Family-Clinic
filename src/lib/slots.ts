@@ -1,118 +1,103 @@
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
-import { supabaseServer } from '@/lib/supabaseServer';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { supabaseServer } from './supabaseServer';
 
 /**
- * Slot model returned by getAvailableSlots.
+ * Slot calculation helpers
+ *
+ * Responsibilities:
+ * - Generate available appointment slots for a given doctor and date.
+ * - Respect:
+ *   - clinic_settings.slot_duration_min
+ *   - clinic_settings.booking_window_days
+ *   - Basic clinic hours (configurable here if not stored per-doctor).
+ * - Exclude:
+ *   - Slots already occupied in appointments.
+ *
+ * Notes:
+ * - Keep deliberately simple and transparent.
+ * - All times are treated in Asia/Singapore timezone context.
  */
-export type Slot = {
-  iso: string; // ISO datetime in UTC
-  label: string; // Human readable label in clinic local time, e.g. "09:00"
+
+const DEFAULT_OPEN_HOURS = [
+  // Morning session
+  { start: '08:30', end: '13:00' },
+  // Afternoon session
+  { start: '14:00', end: '17:30' }
+];
+
+type ClinicSettings = {
+  slot_duration_min: number;
+  booking_window_days: number;
 };
 
 /**
- * getAvailableSlots
- *
- * Compute available appointment slots for a given doctor on a specific date,
- * based on:
- * - clinic_settings.slot_duration_min
- * - fixed working hours (MVP-simple)
- * - existing booked appointments
- *
- * Notes:
- * - Timezone defaults to 'Asia/Singapore' or the value in clinic_settings.timezone.
- * - Non-goal: complex rosters; this is intentionally simple and deterministic.
- * - Uses service-role supabaseServer in a controlled, server-only context.
+ * Load clinic-wide settings once per call.
  */
-export async function getAvailableSlots(
-  doctorId: string,
-  date: string
-): Promise<Slot[]> {
-  if (!doctorId || !date) {
-    throw new Error('doctorId and date are required');
-  }
-
-  // 1) Load clinic settings for slot duration and timezone
-  const { data: settings, error: settingsError } = await supabaseServer
+async function getClinicSettings(): Promise<ClinicSettings> {
+  const { data, error } = await supabaseServer
     .from('clinic_settings')
-    .select('slot_duration_min, timezone')
+    .select('slot_duration_min, booking_window_days')
     .limit(1)
-    .maybeSingle();
+    .single();
 
-  if (settingsError) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to load clinic_settings:', settingsError);
-    throw new Error('Failed to load clinic settings');
+  if (error || !data) {
+    // Fallback to safe defaults if settings not configured.
+    return {
+      slot_duration_min: 15,
+      booking_window_days: 7
+    };
   }
 
-  const slotDurationMin = settings?.slot_duration_min ?? 15;
-  const tz = settings?.timezone || 'Asia/Singapore';
+  return {
+    slot_duration_min: data.slot_duration_min ?? 15,
+    booking_window_days: data.booking_window_days ?? 7
+  };
+}
 
-  // 2) Define working hours for MVP (can be tuned later or made configurable)
-  // For now: 09:00–12:00 and 14:00–17:00 clinic-local.
-  const day = dayjs.tz(date, 'YYYY-MM-DD', tz);
-  if (!day.isValid()) {
-    throw new Error('Invalid date format, expected YYYY-MM-DD');
-  }
-
-  const windows: Array<{ start: dayjs.Dayjs; end: dayjs.Dayjs }> = [
-    {
-      start: day.hour(9).minute(0).second(0).millisecond(0),
-      end: day.hour(12).minute(0).second(0).millisecond(0)
-    },
-    {
-      start: day.hour(14).minute(0).second(0).millisecond(0),
-      end: day.hour(17).minute(0).second(0).millisecond(0)
-    }
-  ];
-
-  // 3) Load existing appointments for that doctor/day to exclude booked slots
-  const startOfDayUtc = windows[0].start.utc().toISOString();
-  const endOfDayUtc = windows[windows.length - 1].end.utc().toISOString();
-
-  const { data: appts, error: apptsError } = await supabaseServer
+/**
+ * Fetch existing appointments for the doctor on that date.
+ */
+async function getExistingAppointmentsForDay(doctorId: string, dayStartIso: string, dayEndIso: string) {
+  const { data, error } = await supabaseServer
     .from('appointments')
-    .select('scheduled_start, status')
+    .select('scheduled_start')
     .eq('doctor_id', doctorId)
-    .gte('scheduled_start', startOfDayUtc)
-    .lte('scheduled_start', endOfDayUtc);
+    .gte('scheduled_start', dayStartIso)
+    .lt('scheduled_start', dayEndIso);
 
-  if (apptsError) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to load existing appointments:', apptsError);
-    throw new Error('Failed to load appointments');
+  if (error) {
+    throw error;
   }
 
-  // Treat booked + arrived + in_consultation as occupying a slot.
-  const occupiedIso = new Set(
-    (appts || [])
-      .filter((a) =>
-        ['booked', 'arrived', 'in_consultation'].includes(a.status)
-      )
-      .map((a) => normalizeToSlotIso(a.scheduled_start, tz, slotDurationMin))
-      .filter((v): v is string => Boolean(v))
-  );
+  return (data || []).map((row) => row.scheduled_start as string);
+}
 
-  // 4) Generate candidate slots and filter out occupied ones
-  const slots: Slot[] = [];
+/**
+ * Generate slot start timestamps between given bounds.
+ */
+function generateSlotsForDay(
+  date: dayjs.Dayjs,
+  settings: ClinicSettings
+): string[] {
+  const slots: string[] = [];
+  const tzDate = date; // Dayjs default; assume server already in Asia/Singapore context.
 
-  for (const { start, end } of windows) {
-    let current = start.clone();
+  for (const session of DEFAULT_OPEN_HOURS) {
+    let cursor = tzDate
+      .hour(parseInt(session.start.split(':')[0], 10))
+      .minute(parseInt(session.start.split(':')[1], 10))
+      .second(0)
+      .millisecond(0);
 
-    while (current.isBefore(end)) {
-      const isoUtc = current.clone().utc().toISOString();
-      const label = current.format('HH:mm');
+    const sessionEnd = tzDate
+      .hour(parseInt(session.end.split(':')[0], 10))
+      .minute(parseInt(session.end.split(':')[1], 10))
+      .second(0)
+      .millisecond(0);
 
-      const key = normalizeToSlotIso(isoUtc, tz, slotDurationMin);
-      if (key && !occupiedIso.has(key)) {
-        slots.push({ iso: isoUtc, label });
-      }
-
-      current = current.add(slotDurationMin, 'minute');
+    while (cursor.add(settings.slot_duration_min, 'minute').isBefore(sessionEnd.add(1, 'minute'))) {
+      slots.push(cursor.toISOString());
+      cursor = cursor.add(settings.slot_duration_min, 'minute');
     }
   }
 
@@ -120,28 +105,48 @@ export async function getAvailableSlots(
 }
 
 /**
- * Normalize a datetime into a canonical slot iso string (UTC) based on:
- * - Given timezone
- * - Slot duration
+ * getAvailableSlots
  *
- * This ensures both generation and occupancy checks snap to the same grid.
+ * - doctorId: UUID of doctor.
+ * - dateStr: 'YYYY-MM-DD' in clinic timezone (Asia/Singapore).
+ *
+ * Returns ISO strings suitable for client-side formatting.
  */
-function normalizeToSlotIso(
-  iso: string,
-  tz: string,
-  slotDurationMin: number
-): string | null {
-  const m = dayjs(iso).tz(tz);
-  if (!m.isValid()) return null;
+export async function getAvailableSlots(doctorId: string, dateStr: string): Promise<string[]> {
+  if (!doctorId || !dateStr) {
+    return [];
+  }
 
-  const minutesFromStart = m.hour() * 60 + m.minute();
-  const snapped = Math.floor(minutesFromStart / slotDurationMin) * slotDurationMin;
+  const settings = await getClinicSettings();
 
-  const snappedMoment = m
-    .startOf('day')
-    .add(snapped, 'minute')
-    .second(0)
-    .millisecond(0);
+  const today = dayjs().startOf('day');
+  const target = dayjs(dateStr, 'YYYY-MM-DD').startOf('day');
 
-  return snappedMoment.utc().toISOString();
+  // Enforce booking window
+  if (
+    target.isBefore(today) ||
+    target.diff(today, 'day') > settings.booking_window_days
+  ) {
+    return [];
+  }
+
+  const dayStart = target.toISOString();
+  const dayEnd = target.add(1, 'day').toISOString();
+
+  const allSlots = generateSlotsForDay(target, settings);
+  if (!allSlots.length) return [];
+
+  const existing = await getExistingAppointmentsForDay(
+    doctorId,
+    dayStart,
+    dayEnd
+  );
+
+  const taken = new Set(
+    existing.map((iso) => dayjs(iso).toISOString())
+  );
+
+  // Filter out any slot that exactly matches an existing appointment.
+  // This is simple but effective for MVP.
+  return allSlots.filter((slotIso) => !taken.has(slotIso));
 }
