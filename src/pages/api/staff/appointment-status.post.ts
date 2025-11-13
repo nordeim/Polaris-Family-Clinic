@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { requireAuth } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabaseServer';
-import { getNextQueueNumber, assertStaff } from '@/lib/queue';
+import { requireStaff } from '@/lib/auth';
+import { getNextQueueNumber } from '@/lib/queue';
 
 /**
  * POST /api/staff/appointment-status.post
@@ -20,6 +20,10 @@ import { getNextQueueNumber, assertStaff } from '@/lib/queue';
  * Response:
  * - 200 { success: true, queue_number?: string }
  * - Standard 4xx/5xx on errors.
+ *
+ * Security:
+ * - requireStaff(req): user must be staff|doctor|admin.
+ * - DB-level RLS as defense in depth.
  */
 
 const StatusSchema = z.object({
@@ -33,22 +37,28 @@ export default async function handler(
 ): Promise<void> {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).end();
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
-  // Auth + staff check
-  let userId: string;
+  // Auth + staff check via central helper
   try {
-    const user = await requireAuth(req);
-    userId = user.id as string;
-    await assertStaff(userId);
+    await requireStaff(req);
   } catch (err: any) {
+    if (err?.message === 'UNAUTHORIZED') {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
     if (err?.message === 'FORBIDDEN') {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
-    res.status(401).json({ error: 'Unauthorized' });
+    // eslint-disable-next-line no-console
+    console.error(
+      'Error in requireStaff for staff/appointment-status.post',
+      err
+    );
+    res.status(500).json({ error: 'Internal server error' });
     return;
   }
 
@@ -68,7 +78,7 @@ export default async function handler(
     // Fetch current appointment row
     const { data: appt, error: fetchError } = await supabaseServer
       .from('appointments')
-      .select('id, doctor_id, scheduled_start, queue_number')
+      .select('id, doctor_id, scheduled_start, status, queue_number')
       .eq('id', appointment_id)
       .maybeSingle();
 
@@ -77,43 +87,88 @@ export default async function handler(
       return;
     }
 
-    let queue_number = appt.queue_number as string | null;
-
-    // Assign queue number on first arrival
-    if (status === 'arrived' && !queue_number) {
-      try {
-        queue_number = await getNextQueueNumber(
-          appt.doctor_id as string,
-          appt.scheduled_start as string
-        );
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to compute next queue number:', e);
-        res.status(500).json({ error: 'Failed to assign queue number' });
+    // Handle 'arrived': idempotent queue assignment
+    if (status === 'arrived') {
+      // If already arrived with queue number, be idempotent
+      if (appt.status === 'arrived' && appt.queue_number) {
+        res.status(200).json({
+          success: true,
+          queue_number: appt.queue_number
+        });
         return;
       }
+
+      let queue_number = appt.queue_number as string | null;
+
+      if (!queue_number) {
+        try {
+          queue_number = await getNextQueueNumber(
+            appt.doctor_id as string,
+            appt.scheduled_start as string
+          );
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error(
+            'Failed to compute next queue number:',
+            e
+          );
+          res
+            .status(500)
+            .json({ error: 'Failed to assign queue number' });
+          return;
+        }
+      }
+
+      const { error: updateError } = await supabaseServer
+        .from('appointments')
+        .update({
+          status: 'arrived',
+          queue_number
+        })
+        .eq('id', appointment_id);
+
+      if (updateError) {
+        // eslint-disable-next-line no-console
+        console.error(
+          'Error updating appointment status to arrived:',
+          updateError
+        );
+        res.status(500).json({ error: 'Failed to update status' });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        queue_number: queue_number || undefined
+      });
+      return;
     }
 
-    // Update appointment status (and queue number if applicable)
+    // Other statuses: simple update, queue_number unchanged
     const { error: updateError } = await supabaseServer
       .from('appointments')
       .update({
-        status,
-        queue_number
+        status
       })
       .eq('id', appointment_id);
 
     if (updateError) {
       // eslint-disable-next-line no-console
-      console.error('Error updating appointment status:', updateError);
+      console.error(
+        'Error updating appointment status:',
+        updateError
+      );
       res.status(500).json({ error: 'Failed to update status' });
       return;
     }
 
-    res.status(200).json({ success: true, queue_number: queue_number || undefined });
+    res.status(200).json({ success: true });
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('Unexpected error in staff/appointment-status.post:', e);
+    console.error(
+      'Unexpected error in staff/appointment-status.post:',
+      e
+    );
     res.status(500).json({ error: 'Internal server error' });
   }
 }
