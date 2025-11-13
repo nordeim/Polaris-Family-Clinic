@@ -1,5 +1,5 @@
 $ rm -rf .next/
-pete@pop-os:/home/project/Polaris-Family-Clinic
+
 $ npm run build
 
 > gabriel-clinic-mvp@1.0.0 build
@@ -35,7 +35,7 @@ Route (pages)                             Size     First Load JS
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
 
-pete@pop-os:/home/project/Polaris-Family-Clinic
+
 $ npm run start
 
 > gabriel-clinic-mvp@1.0.0 start
@@ -47,4 +47,6 @@ $ npm run start
  ✓ Starting...
  ⚠ The static directory has been deprecated in favor of the public directory. https://nextjs.org/docs/messages/static-dir-deprecated
  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
- ✓ Ready in 1132ms
+ ✓ Ready in 1147ms
+
+

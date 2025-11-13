@@ -74,7 +74,7 @@ export function PublicHeader() {
 
         {/* Mobile toggle */}
         <button
-          className="nav-toggle"
+          className="nav-toggle mantine-hidden-from-lg"
           aria-label="Toggle navigation"
           aria-expanded={open ? 'true' : 'false'}
           data-nav-toggle

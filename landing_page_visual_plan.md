@@ -1,4 +1,100 @@
-Summary
+Targeted header refinement summary
+
+The remaining “off” impression is header-specific: alignment, responsiveness, and behavior must exactly match the static mockup while preserving Mantine + ui-* primitives.
+
+In this iteration I have:
+
+1) Aligned header behavior to proper responsive semantics
+
+File:
+- [src/components/layout/PublicHeader.tsx](src/components/layout/PublicHeader.tsx:1)
+
+Key points of the current implementation (post-edits):
+
+- Uses:
+  - NAV_LINKS for consistent anchor labels and hrefs.
+  - useState(open) to control mobile nav.
+  - Class:
+    - 'nav-links' + (open ? ' is-open' : '') for the menu.
+- Hamburger button:
+  - Now:
+    - className="nav-toggle mantine-hidden-from-lg"
+    - This ensures:
+      - Hamburger is hidden on large screens (desktop), visible on small/medium.
+  - aria-expanded is bound to open state.
+- Desktop CTAs:
+  - Rely on Mantine Group with visibleFrom="lg":
+    - Book / My Profile / Staff Portal rendered as UiButton-based ui-btn primitives.
+  - This keeps the right-side CTAs only on desktop, not cluttering mobile.
+
+Effect:
+
+- Desktop:
+  - Brand (left), inline nav links (center/left within nav), Book Now pill, and right-side CTAs:
+    - Compose a clean, static-like header.
+- Mobile / tablet:
+  - Brand + hamburger visible.
+  - Desktop CTAs hidden (visibleFrom="lg").
+  - nav-links configured via tokens.css to display vertically when .is-open is applied.
+
+2) Solidified nav styling and mobile layout
+
+File:
+- [src/styles/tokens.css](src/styles/tokens.css:183, 539)
+
+Already in place and reaffirmed:
+
+- Desktop .nav-link:
+  - font-size: 0.9rem;
+  - muted color;
+  - padding + subtle bottom border transition.
+- @media (max-width: 900px):
+  - .nav-links:
+    - Hidden by default; absolute positioned dropdown when opened.
+  - .nav-links.is-open:
+    - display: flex (vertical menu).
+  - .nav-toggle:
+    - display: flex.
+  - Sections:
+    - Stacked grids and smaller vertical padding for mobile.
+
+Impact:
+
+- Mobile header now has the structural pieces to behave like the static design:
+  - Only brand + toggle visible.
+  - Menu expands into a full-width panel of big, tappable nav links.
+
+Why header might still feel off (and how this iteration addresses root causes)
+
+Previously:
+
+- Hamburger could appear at desktop widths or compete with desktop nav due to mismatched visibility rules.
+- Button/link mix and spacing led to cramped layouts around certain breakpoints.
+
+Now:
+
+- Hamburger is explicitly hidden on lg+ via mantine-hidden-from-lg.
+- Desktop CTAs are explicitly gated via visibleFrom="lg".
+- nav-links mobile behavior is controlled purely via is-open + media rules.
+
+Taken together:
+
+- This removes overlapping header states.
+- Produces a simpler mental model:
+  - Desktop: classic nav with Book Now pill.
+  - Mobile: clean brand + toggle, dropdown menu for navigation + Book Now.
+
+Conclusion
+
+With the latest refinements:
+
+- Header behavior is now technically coherent and aligned with the static mockup’s intent:
+  - Correct elements visible at each breakpoint.
+  - Unified use of ui-btn for CTAs.
+  - Clean mobile dropdown implementation.
+- Combined with the earlier hero, section, and CTA band work, the dynamic landing page is structurally and responsively aligned with the static trio while staying within the Mantine + custom primitives architecture.
+
+---
 
 I have applied the requested CSS refinements in src/styles/tokens.css and confirmed the current header implementation already uses a robust responsive pattern. The dynamic landing page is now driven by:
 
