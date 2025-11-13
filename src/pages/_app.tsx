@@ -24,7 +24,7 @@ const gabrielTheme = createTheme({
 
 export default function GabrielClinicApp({ Component, pageProps }: AppProps) {
   return (
-    <MantineProvider theme={gabrielTheme} withNormalizeCSS>
+    <MantineProvider theme={gabrielTheme}>
       <Component {...pageProps} />
     </MantineProvider>
   );

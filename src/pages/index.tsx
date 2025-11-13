@@ -64,7 +64,7 @@ export default function HomePage() {
                     </UiButton>
                     <a
                       href="#seniors"
-                      className="btn btn-outline btn-large"
+                      className="ui-btn ui-btn--outline ui-btn--lg"
                     >
                       View Queue & Patient Guide
                     </a>
@@ -317,7 +317,7 @@ export default function HomePage() {
               <a href="#hero" className="btn btn-primary btn-large">
                 Try the booking experience
               </a>
-              <a href="#contact" className="btn btn-outline btn-large">
+              <a href="#contact" className="ui-btn ui-btn--outline ui-btn--lg">
                 Talk to our clinic team
               </a>
             </div>
