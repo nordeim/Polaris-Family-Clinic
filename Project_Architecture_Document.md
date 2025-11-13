@@ -1,818 +1,532 @@
-Executive Summary
+# Gabriel Family Clinic MVP v1.0 – Project Architecture Document (Updated)
 
-I will:
+Author: Kilo Code (AI Technical Partner)  
+Audience: Solo/full-stack developer(s), AI coding agents, senior reviewers
 
-1) Design an improved Project Architecture Document (PAD) aligned with:
-- The refined MVP PRD (single clinic, senior-first, 4-week build).
-- The `database_schema.sql` we defined (Supabase, RLS, PDPA-aware).
+This document is the canonical Project Architecture Document (PAD) for this repository.  
+It is aligned with:
 
-2) Provide the complete `Project_Architecture_Document.md` contents:
-- Clear goals and constraints.
-- System overview.
-- File/folder hierarchy with key files and responsibilities.
-- Mermaid diagrams:
-  - Application logic flow.
-  - User ↔ modules interactions.
-- Key API route skeletons wired to the schema.
+- [`README_new.md`](README_new.md:1)
+- [`AGENT_new.md`](AGENT_new.md:1)
+- [`database_schema.sql`](database_schema.sql:1)
+- [`docs/master_execution_todo_checklist.md`](docs/master_execution_todo_checklist.md:1)
+- The current implemented code under `src/`
 
-3) Define an implementation plan:
-- How a single developer uses this PAD to scaffold and build the system.
-- Validation checklist to ensure the PAD is practical, coherent, and safe.
+Use this PAD as the day-to-day architectural reference.
 
-I will first present the PAD (as the replacement document).
-Then I’ll outline and review the implementation plan.
+---
 
----------------------------------
-Project_Architecture_Document.md
----------------------------------
+## 1. Purpose & Scope
 
-Title: Gabriel Family Clinic MVP v1.0 – Project Architecture Document
+This PAD defines the practical, implementable architecture for the Gabriel Family Clinic MVP.
 
-1. Purpose and Scope
+Optimized for:
 
-This document defines the practical, implementable architecture for the Gabriel Family Clinic MVP platform.
-
-It is optimized for:
-- One neighborhood clinic.
-- One careful developer.
-- A 4-week path to a safe, working system.
-- Zero DevOps overhead (Supabase + Vercel).
+- One neighborhood clinic (no multi-tenant complexity).
+- One careful developer (or supervised AI agent).
+- A 4–6 week path to a safe, working MVP.
+- Zero DevOps: Vercel + Supabase (+ Twilio later).
 - Senior-first usability.
-- PDPA-conscious handling of personal and clinical data.
+- PDPA-conscious data handling.
 
-This PAD is the single source of truth for:
-- Tech stack.
-- Folder structure.
-- Data model.
-- API contracts.
-- Auth + RLS strategy.
-- How all parts fit together.
+This document is the single source of truth for:
 
-If a decision is not in this document, keep it simple by default.
+- Tech stack
+- Folder structure
+- Data model
+- API contracts
+- Auth + RLS strategy
+- How all parts fit together
 
-2. High-Level Architecture Overview
+If a decision is not in this document, choose the simplest option that respects:
 
-2.1 Core Principles
+- Single clinic
+- RLS/PDPA
+- Senior-first UX
+- Operational simplicity
 
-- One clinic:
-  - No multi-tenant complexity.
-- One identity:
-  - Supabase Auth `auth.uid()` drives all access control.
-- One patient profile per user:
-  - `patient_profiles.user_id = auth.uid()`.
-- One small set of roles:
-  - `staff`, `doctor`, `admin` via `staff_profiles`.
-- RLS everywhere:
+---
+
+## 2. High-Level Architecture Overview
+
+### 2.1 Core Principles
+
+- **One clinic**
+  - No `clinic_id` in v1. All logic assumes a single clinic.
+- **One identity**
+  - Supabase Auth `auth.uid()` is the root identity.
+- **One patient profile per user**
+  - `patient_profiles.user_id = auth.uid()` (unique).
+- **Few roles**
+  - `staff_profiles.role IN ('staff','doctor','admin')`.
+- **RLS everywhere**
   - Patients see only their data.
-  - Staff/doctor/admin see what they need.
-- Boring tools:
+  - Staff/doctor/admin see only what they need.
+- **Boring, proven tools**
   - Next.js (Pages Router) + Supabase + Twilio.
-- Minimal features:
-  - v1 is booking + basic queue + simple views.
+- **Minimal MVP**
+  - v1 is: login → profile → book → staff view → status/queue.
 
-2.2 System Components
+### 2.2 System Components
 
-- Client:
-  - Patient-facing web app:
-    - Registration/login.
-    - Profile setup.
-    - Booking.
-    - View upcoming appointments.
-  - Staff/doctor portal:
-    - Today’s appointments.
-    - Status changes (arrived, in consult, completed, no-show).
-    - Queue control.
+**Client (Next.js)**
 
-- Backend:
-  - Next.js API Routes:
-    - Auth/session helpers.
-    - Reading/writing to Supabase (server-side).
-    - Sending SMS/WhatsApp via Twilio.
+- Patient-facing:
+  - Landing page aligned with static mockup.
+  - Login, profile, booking, upcoming appointments.
+- Staff-facing:
+  - Today’s appointments.
+  - Status updates.
+  - Queue indicators.
 
-- Data:
-  - Supabase Postgres:
-    - `patient_profiles`, `staff_profiles`, `doctors`, `clinic_settings`, `appointments`, `notifications`.
-  - RLS policies enforced in DB.
+**Backend (Next.js API Routes)**
 
-- Integrations:
-  - Supabase Auth:
-    - Phone OTP (and/or email) for login.
-  - Twilio:
-    - SMS (and optional WhatsApp) for confirmation/reminders.
+- API routes under `src/pages/api`:
+  - Use `supabaseServer` (service role) server-side only.
+  - Use `requireAuth` / `requireStaff` for protected endpoints.
+  - Implement business rules (slots, queue, notifications).
 
-3. Project Structure
+**Data (Supabase Postgres)**
 
-Root layout (pragmatic, senior-developer-friendly):
+- Tables:
+  - `patient_profiles`, `staff_profiles`, `doctors`,
+  - `clinic_settings`, `appointments`, `notifications`.
+- RLS:
+  - Implemented per `database_schema.sql`.
+
+**Integrations**
+
+- Supabase Auth:
+  - Email magic link or phone OTP.
+- Twilio:
+  - SMS / WhatsApp planned for confirmations/reminders (best-effort).
+
+---
+
+## 3. Project Structure (Current & Target)
+
+This reflects the actual repo structure and intended target.
 
 ```text
-gabriel-clinic-mvp/
+Polaris-Family-Clinic/
+  README.md                      # Replace with README_new.md
+  AGENT.md                       # Replace with AGENT_new.md
   Project_Architecture_Document.md
+  Project_Requirements_Document.md
+  Master_Execution_Plan.md
+  database_schema.sql
   package.json
   tsconfig.json
   next.config.js
   .env.example
-  database_schema.sql
-  deploy_database.py
-  run_database_deploy.sh
 
   /src
     /pages
-      index.tsx
-      book.tsx
-      login.tsx
-      profile.tsx
+      _app.tsx
+      index.tsx                  # Dynamic landing, uses layout + ui primitives
+      login.tsx                  # Patient login (Supabase Auth integration)
+      profile.tsx                # Patient profile page
+      book.tsx                   # Booking flow
 
       /staff
-        index.tsx
-        login.tsx
-        appointments.tsx
+        appointments.tsx         # Staff console (today’s appointments & queue)
 
       /api
-        /auth
-          start-otp.ts
-          verify-otp.ts
         /patient
-          profile.get.ts
-          profile.put.ts
+          profile.get.ts         # GET current patient profile
+          profile.put.ts         # PUT/UPSERT profile (NRIC hash/mask)
         /doctors
-          index.get.ts
+          index.get.ts           # GET active doctors
         /slots
-          index.get.ts
+          index.get.ts           # GET available slots
         /appointments
-          book.post.ts
-          mine.get.ts
+          book.post.ts           # POST book appointment
+          mine.get.ts            # GET current user’s appointments
         /staff
-          appointments.get.ts
-          appointment-status.post.ts
-        /cron
-          reminders.post.ts
+          appointments.get.ts    # GET today’s appointments (staff only)
+          appointment-status.post.ts # POST update status/queue (staff only)
+        # (Future) /cron
+        #   reminders.post.ts    # POST for reminder cron
 
     /components
       /layout
-        PublicLayout.tsx
-        StaffLayout.tsx
+        PublicHeader.tsx         # Landing / shell header
       /ui
-        PrimaryButton.tsx
-        TextField.tsx
-        SelectField.tsx
+        button.tsx               # Primary button primitive
+        card.tsx                 # Card primitive
+        badge.tsx                # Badge primitive
+        section.tsx              # Layout section primitive
       /patient
         BookingForm.tsx
-        LoginForm.tsx
-        ProfileForm.tsx
         UpcomingAppointmentsList.tsx
-      /staff
-        StaffLoginForm.tsx
-        TodayAppointmentsTable.tsx
-        QueueControls.tsx
+      # Staff table/controls may be inline in staff/appointments for now
 
     /lib
-      supabaseClient.ts
-      supabaseServer.ts
-      auth.ts
-      slots.ts
-      queue.ts
-      notifications.ts
-      validation.ts
-      config.ts
-
-    /types
-      models.ts
-      supabase.ts  // optional generated types
+      supabaseClient.ts          # Browser Supabase (anon)
+      supabaseServer.ts          # Server Supabase (service role)
+      auth.ts                    # getUserFromRequest, requireAuth, requireStaff
+      validation.ts              # Zod schemas (profile, booking)
+      slots.ts                   # Slot calculation helpers
+      queue.ts                   # Queue number helpers
+      # notifications.ts (planned)
 
     /styles
-      globals.css
-      layout.module.css
+      globals.css                # Global styles
+      tokens.css                 # Design tokens (colors, typography, spacing)
 
   /supabase
-    schema.sql        // copy or split of database_schema.sql for Supabase migrations
-    config.toml
-
-  /tests
-    /unit
-    /integration
-    /e2e
+    schema.sql                   # Migration-friendly schema
 
   /docs
-    prd.md
-    runbook.md
+    project_review_and_codebase_understanding.md
+    master_execution_todo_checklist.md
+    project_scaffold_config.md
+    phase1_safety-critical_backbone.md
+    phase2-superbase-login.md
+    phase3-staff-console.md
+    phase5-notifications.md
+    staff_portal_and_queue_management_plan.md
+    README_plan.md
+
+  /static
+    index.html                   # Static mockup
+    styles/globals.css
+    js/landing.js
 ```
 
-3.1 Key Files and Responsibilities
-
-- `Project_Architecture_Document.md`:
-  - This document. Architecture source of truth.
-
-- `database_schema.sql`:
-  - Canonical DB schema + RLS, as previously defined.
-
-- `deploy_database.py` + `run_database_deploy.sh`:
-  - Initialize local/custom Postgres.
-  - For Supabase, use `schema.sql` via `supabase db push` instead.
-
-- `src/lib/supabaseClient.ts`:
-  - Browser-side Supabase client (anon key).
-  - For non-sensitive reads where allowed.
-
-- `src/lib/supabaseServer.ts`:
-  - Server-side Supabase client with service role key.
-  - Used only in API routes (never in browser).
-
-- `src/lib/auth.ts`:
-  - Helpers:
-    - `getUserFromRequest(req)`
-    - `requireAuth(req)`
-    - `requireStaff(req)`
-  - Wrap Supabase Auth token parsing.
-
-- `src/lib/slots.ts`:
-  - Slot calculation logic:
-    - Reads `clinic_settings` and `appointments`.
-    - Returns available time windows (next X days).
-
-- `src/lib/queue.ts`:
-  - Queue number assignment:
-    - Look up latest `queue_number` for doctor/day.
-    - Generate next (e.g. A001 → A002).
-
-- `src/lib/notifications.ts`:
-  - Twilio integration:
-    - `sendBookingConfirmation()`
-    - `sendReminder()`
-    - Non-fatal on failure.
-
-- `src/pages/book.tsx`:
-  - Simple booking page:
-    - Uses `BookingForm`.
-
-- `src/pages/staff/appointments.tsx`:
-  - Staff view:
-    - Today’s appointments, state transitions, queue control.
-
-Everything else is a thin wrapper around these core responsibilities.
-
-4. Application Logic Flow
-
-4.1 Patient Booking Flow (End-to-End)
-
-```mermaid
-sequenceDiagram
-    participant P as Patient (Mdm. Tan)
-    participant UI as Web UI (Next.js)
-    participant API as API Routes
-    participant SA as Supabase Auth
-    participant DB as Supabase DB
-    participant TW as Twilio (SMS/WhatsApp)
-    participant ST as Staff UI
-
-    %% Login / OTP
-    P->>UI: Open /book
-    UI->>P: Show "Enter mobile number"
-    P->>API: POST /api/auth/start-otp (phone)
-    API->>SA: Request OTP for phone
-    SA-->>P: SMS with OTP
-
-    P->>API: POST /api/auth/verify-otp (phone, otp)
-    API->>SA: Verify OTP
-    SA-->>API: auth.user (user_id)
-    API->>P: Set auth session (cookie / token)
-
-    %% Profile
-    UI->>API: GET /api/patient/profile
-    API->>DB: SELECT patient_profiles WHERE user_id = auth.uid()
-    DB-->>API: None (first time)
-    API->>UI: Prompt profile form
-
-    P->>API: PUT /api/patient/profile (name, NRIC, DOB, language)
-    API->>DB: INSERT patient_profiles (user_id = auth.uid(), nric_hash, nric_masked)
-
-    %% Booking
-    UI->>API: GET /api/doctors
-    API->>DB: SELECT doctors WHERE is_active = TRUE
-    DB-->>API: Doctor list
-    API-->>UI: Doctor list
-
-    P->>UI: Choose doctor, date
-    UI->>API: GET /api/slots?doctor_id&date
-    API->>DB: Compute available slots from clinic_settings + appointments
-    DB-->>API: Slots
-    API-->>UI: Slots
-
-    P->>API: POST /api/appointments/book (doctor_id, datetime)
-    API->>DB: INSERT INTO appointments (patient_id from auth.uid())
-    DB-->>API: Appointment row
-    API->>TW: Send confirmation SMS
-    TW-->>P: "✅ Appointment confirmed"
-
-    %% Clinic Day
-    ST->>UI: Staff login (/staff/login)
-    ST->>API: GET /api/staff/appointments/today
-    API->>DB: SELECT appointments + patient_profiles (RLS via staff_profiles)
-    DB-->>API: Appointments
-    API-->>ST: Today’s list
-
-    ST->>API: POST /api/staff/appointment-status (id, 'arrived')
-    API->>DB: UPDATE appointments SET status='arrived', queue_number=next_for_doctor()
-    DB-->>API: OK
-
-    %% Optional queue alert
-    ST->>API: POST /api/staff/appointment-status (id, 'in_consultation')
-    API->>DB: UPDATE appointments SET status='in_consultation'
-    DB-->>API: OK
-```
-
-5. User and Modules Interaction Diagram
-
-```mermaid
-graph TB
-
-  subgraph Users
-    PATIENT[👤 Patient<br/>Mdm. Tan]
-    STAFF[👥 Staff / Reception]
-    DOCTOR[👨‍⚕️ Doctor]
-    ADMIN[👨‍💼 Admin]
-  end
-
-  subgraph Frontend (Next.js)
-    PATIENT_UI[Patient UI<br/>/book, /profile]
-    STAFF_UI[Staff UI<br/>/staff/appointments]
-    AUTH_UI[Auth UI<br/>/login]
-  end
-
-  subgraph Backend (API Routes)
-    AUTH_API[/api/auth/*]
-    PATIENT_API[/api/patient/*]
-    DOCTORS_API[/api/doctors]
-    SLOTS_API[/api/slots]
-    APPTS_API[/api/appointments/*]
-    STAFF_API[/api/staff/*]
-    CRON_API[/api/cron/reminders]
-  end
-
-  subgraph Services (/lib)
-    AUTH_SVCS[auth.ts<br/>getUser, requireStaff]
-    SLOTS_SVCS[slots.ts<br/>slot logic]
-    QUEUE_SVCS[queue.ts<br/>queue numbers]
-    NOTIFY_SVCS[notifications.ts<br/>Twilio]
-  end
-
-  subgraph Infra
-    SUPABASE[(Supabase<br/>Auth + Postgres + RLS)]
-    TWILIO[(Twilio<br/>SMS/WhatsApp)]
-  end
-
-  PATIENT --> PATIENT_UI
-  PATIENT --> AUTH_UI
-  STAFF --> STAFF_UI
-  DOCTOR --> STAFF_UI
-  ADMIN --> STAFF_UI
-
-  PATIENT_UI --> AUTH_API
-  PATIENT_UI --> PATIENT_API
-  PATIENT_UI --> DOCTORS_API
-  PATIENT_UI --> SLOTS_API
-  PATIENT_UI --> APPTS_API
-
-  STAFF_UI --> AUTH_API
-  STAFF_UI --> STAFF_API
-  STAFF_UI --> APPTS_API
-
-  AUTH_API --> AUTH_SVCS
-  PATIENT_API --> AUTH_SVCS
-  DOCTORS_API --> SUPABASE
-  SLOTS_API --> SLOTS_SVCS
-  APPTS_API --> QUEUE_SVCS
-  APPTS_API --> SUPABASE
-  STAFF_API --> AUTH_SVCS
-  STAFF_API --> SUPABASE
-  CRON_API --> NOTIFY_SVCS
-
-  AUTH_SVCS --> SUPABASE
-  SLOTS_SVCS --> SUPABASE
-  QUEUE_SVCS --> SUPABASE
-  NOTIFY_SVCS --> TWILIO
-
-  style PATIENT fill:#e3f2fd
-  style STAFF fill:#fff3e0
-  style DOCTOR fill:#fff3e0
-  style PATIENT_UI fill:#e8f5e9
-  style STAFF_UI fill:#e8f5e9
-  style AUTH_API fill:#fce4ec
-  style SUPABASE fill:#f3e5f5
-```
-
-6. Key API Route Skeletons (Aligned with Schema)
-
-Note: These are high-level skeletons; actual implementation will import the real Supabase server client and auth helpers. All code blocks are examples and must be tailored to your environment and auth strategy.
-
-6.1 `src/lib/supabaseServer.ts`
-
-```ts
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-export const supabaseServer = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    persistSession: false
-  }
-});
-```
-
-6.2 `src/lib/auth.ts`
-
-```ts
-import { NextApiRequest } from 'next';
-import { supabaseServer } from './supabaseServer';
-
-export async function getUserFromRequest(req: NextApiRequest) {
-  const token = req.headers.authorization?.replace('Bearer ', '') 
-    || req.cookies['sb-access-token'];
-
-  if (!token) return null;
-
-  const { data, error } = await supabaseServer.auth.getUser(token);
-  if (error || !data?.user) return null;
-
-  return data.user;
-}
-
-export async function requireAuth(req: NextApiRequest) {
-  const user = await getUserFromRequest(req);
-  if (!user) throw new Error('UNAUTHORIZED');
-  return user;
-}
-```
-
-(Production: adapt to your Supabase auth integration pattern.)
-
-6.3 `GET /api/doctors` – List Active Doctors
-
-```ts
-// src/pages/api/doctors/index.get.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseServer } from '@/lib/supabaseServer';
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') return res.status(405).end();
-
-  const { data, error } = await supabaseServer
-    .from('doctors')
-    .select('id, name, photo_url, languages')
-    .eq('is_active', true);
-
-  if (error) {
-    console.error('Error fetching doctors:', error);
-    return res.status(500).json({ error: 'Failed to fetch doctors' });
-  }
-
-  return res.status(200).json({ doctors: data || [] });
-}
-```
-
-6.4 `GET /api/slots` – Compute Available Slots
-
-```ts
-// src/pages/api/slots/index.get.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAvailableSlots } from '@/lib/slots';
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') return res.status(405).end();
-
-  const { doctor_id, date } = req.query;
-  if (!doctor_id || !date) {
-    return res.status(400).json({ error: 'doctor_id and date are required' });
-  }
-
-  try {
-    const slots = await getAvailableSlots(String(doctor_id), String(date));
-    return res.status(200).json({ slots });
-  } catch (e: any) {
-    console.error('Error fetching slots:', e);
-    return res.status(500).json({ error: 'Failed to fetch slots' });
-  }
-}
-```
-
-6.5 `POST /api/appointments/book` – Create Appointment
-
-```ts
-// src/pages/api/appointments/book.post.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { z } from 'zod';
-import { supabaseServer } from '@/lib/supabaseServer';
-import { requireAuth } from '@/lib/auth';
-import { sendBookingConfirmation } from '@/lib/notifications';
-
-const BookSchema = z.object({
-  doctor_id: z.string().uuid(),
-  scheduled_start: z.string().datetime()
-});
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
-
-  let user;
-  try {
-    user = await requireAuth(req);
-  } catch {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const parse = BookSchema.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({ error: 'Invalid input', details: parse.error.flatten() });
-  }
-
-  const { doctor_id, scheduled_start } = parse.data;
-
-  try {
-    // Find patient_profile
-    const { data: profile, error: profileErr } = await supabaseServer
-      .from('patient_profiles')
-      .select('id, full_name')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileErr || !profile) {
-      return res.status(400).json({ error: 'Patient profile not found' });
-    }
-
-    // Insert appointment
-    const { data: appt, error: apptErr } = await supabaseServer
-      .from('appointments')
-      .insert({
-        patient_id: profile.id,
-        doctor_id,
-        scheduled_start,
-        status: 'booked'
-      })
-      .select('id, scheduled_start')
-      .single();
-
-    if (apptErr || !appt) {
-      console.error('Error creating appointment:', apptErr);
-      return res.status(500).json({ error: 'Failed to create appointment' });
-    }
-
-    // Best-effort notification
-    try {
-      await sendBookingConfirmation(profile, appt);
-    } catch (e) {
-      console.warn('Notification failed:', e);
-    }
-
-    return res.status(201).json({
-      success: true,
-      appointment: appt
-    });
-  } catch (e) {
-    console.error('Unexpected error:', e);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-```
-
-6.6 `GET /api/staff/appointments` – Today’s Appointments
-
-```ts
-// src/pages/api/staff/appointments.get.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseServer } from '@/lib/supabaseServer';
-import { requireAuth } from '@/lib/auth';
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') return res.status(405).end();
-
-  const user = await requireAuth(req);
-
-  // Check staff role
-  const { data: staff, error: staffErr } = await supabaseServer
-    .from('staff_profiles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single();
-
-  if (staffErr || !staff || !['staff', 'doctor', 'admin'].includes(staff.role)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
-
-  const { data, error } = await supabaseServer
-    .from('appointments')
-    .select(`
-      id,
-      scheduled_start,
-      status,
-      queue_number,
-      patient:patient_profiles (full_name),
-      doctor:doctors (name)
-    `)
-    .gte('scheduled_start', start)
-    .lt('scheduled_start', end)
-    .order('scheduled_start', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching staff appointments:', error);
-    return res.status(500).json({ error: 'Failed to fetch appointments' });
-  }
-
-  return res.status(200).json({ appointments: data || [] });
-}
-```
-
-6.7 `POST /api/staff/appointment-status` – Update Status / Queue
-
-```ts
-// src/pages/api/staff/appointment-status.post.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { z } from 'zod';
-import { supabaseServer } from '@/lib/supabaseServer';
-import { requireAuth } from '@/lib/auth';
-import { getNextQueueNumber } from '@/lib/queue';
-
-const StatusSchema = z.object({
-  appointment_id: z.string().uuid(),
-  status: z.enum(['arrived', 'in_consultation', 'completed', 'no_show'])
-});
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
-
-  const user = await requireAuth(req);
-
-  const { data: staff, error: staffErr } = await supabaseServer
-    .from('staff_profiles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single();
-
-  if (staffErr || !staff || !['staff', 'doctor', 'admin'].includes(staff.role)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  const parse = StatusSchema.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({ error: 'Invalid input', details: parse.error.flatten() });
-  }
-
-  const { appointment_id, status } = parse.data;
-
-  try {
-    // If marking arrived and no queue_number, assign one
-    if (status === 'arrived') {
-      const { data: appt, error: apptErr } = await supabaseServer
-        .from('appointments')
-        .select('id, doctor_id, scheduled_start, queue_number')
-        .eq('id', appointment_id)
-        .single();
-
-      if (apptErr || !appt) {
-        return res.status(404).json({ error: 'Appointment not found' });
-      }
-
-      let queue_number = appt.queue_number;
-      if (!queue_number) {
-        queue_number = await getNextQueueNumber(appt.doctor_id, appt.scheduled_start);
-      }
-
-      const { error: updErr } = await supabaseServer
-        .from('appointments')
-        .update({ status, queue_number })
-        .eq('id', appointment_id);
-
-      if (updErr) throw updErr;
-
-      return res.status(200).json({ success: true, queue_number });
-    }
-
-    // Other statuses: simple update
-    const { error: updErr } = await supabaseServer
-      .from('appointments')
-      .update({ status })
-      .eq('id', appointment_id);
-
-    if (updErr) throw updErr;
-
-    return res.status(200).json({ success: true });
-  } catch (e) {
-    console.error('Error updating status:', e);
-    return res.status(500).json({ error: 'Failed to update status' });
-  }
-}
-```
-
-7. Implementation Plan (for the Improved PAD)
-
-Goal:
-- Turn this architecture into a functioning MVP in 4 weeks by a single developer.
-
-Phase 1: Foundations (Days 1–3)
-
-- Tasks:
-  - Initialize Next.js + TypeScript project.
-  - Add Mantine, Zod.
-  - Set up Supabase project.
-  - Apply `database_schema.sql` via Supabase migrations.
-  - Configure environment variables:
-    - Supabase URL, anon key, service role key.
-    - Twilio keys (stub ok for dev).
-  - Implement:
-    - `supabaseClient.ts`
-    - `supabaseServer.ts`
-    - `auth.ts` (basic `getUserFromRequest`).
-
-- Success criteria:
-  - App boots locally.
-  - Supabase connected.
-  - Basic RLS-enabled schema online.
-
-Phase 2: Patient Flows (Days 4–10)
-
-- Tasks:
-  - Implement:
-    - `/login` with OTP flow (wired to Supabase Auth).
-    - `/profile` page + `GET/PUT /api/patient/profile`.
-    - `/book` page + `GET /api/doctors` + `GET /api/slots`.
-    - `POST /api/appointments/book`.
-  - Implement `BookingForm.tsx` with:
-    - Doctor selection.
-    - Date + time selection.
-    - Error handling + success state.
-
-- Success criteria:
-  - Authenticated patient can:
-    - Create profile.
-    - Book appointment.
-    - Receive console-log or real SMS confirmation in dev.
-
-Phase 3: Staff Portal & Queue (Days 11–16)
-
-- Tasks:
-  - Seed `staff_profiles` and `doctors` rows.
-  - Implement:
-    - `/staff/login` (reuse Supabase Auth).
-    - `/staff/appointments` view.
-    - `GET /api/staff/appointments`.
-    - `POST /api/staff/appointment-status`.
-    - `QueueControls.tsx` UI.
-  - Simple filtering for today’s appointments.
-
-- Success criteria:
-  - Staff can:
-    - Log in.
-    - View today’s appointments.
-    - Mark “arrived” and see `queue_number` assigned reliably.
-
-Phase 4: Notifications & Polish (Days 17–22)
-
-- Tasks:
-  - Implement `notifications.ts` with Twilio integration:
-    - Best-effort confirmation SMS.
-  - Implement simple 24h reminder:
-    - `/api/cron/reminders` triggered by:
-      - Supabase scheduled job or external cron.
-  - UX polish:
-    - Large buttons, clear text, mobile-friendly.
-
-- Success criteria:
-  - Booking triggers SMS in staging.
-  - Reminder endpoint works when hit manually.
-
-Phase 5: Testing, Validation, Launch Prep (Days 23–28)
-
-- Tasks:
-  - Manual testing of:
-    - 10+ bookings.
-    - Staff status updates.
-    - RLS (patient cannot see others’ data).
-  - Add a few unit/integration tests for:
-    - Booking API.
-    - Staff appointments API.
-  - Create `docs/runbook.md`:
-    - How to operate.
-    - Fallback plan if system down.
-
-- Success criteria:
-  - Stable end-to-end flows.
-  - Clinic staff trained in <30 minutes.
-  - 3–5 seniors complete booking unaided in test.
-
-8. Validation of the Improved PAD
-
-Checklist:
-
-- Aligned with improved PRD:
-  - Yes: features limited to MVP-critical flows.
-- Consistent with `database_schema.sql`:
-  - Yes: all API skeletons use `patient_profiles`, `staff_profiles`, `doctors`, `appointments`, `notifications`.
-- PDPA-aware:
-  - Yes: NRIC handling is in schema, not in routes; access via `auth.uid()`.
-- Implementable by one developer in 4 weeks:
-  - Yes: bounded routes, clear structure, no over-engineering.
-- Extensible:
-  - Yes: can add MC PDFs, notes, CHAS logic later via incremental migrations and routes.
+Key points:
+
+- This PAD, `README_new.md`, and `AGENT_new.md` are consistent.
+- `docs/master_execution_todo_checklist.md` tracks which parts are implemented.
+
+---
+
+## 4. Data Model & Auth/RLS Strategy
+
+The source of truth is [`database_schema.sql`](database_schema.sql:1). Summary:
+
+### 4.1 Identity & Roles
+
+- Supabase Auth:
+  - `auth.users.id` is primary identity.
+- `patient_profiles`:
+  - One row per `auth.uid()`.
+  - Linked via `user_id`.
+- `staff_profiles`:
+  - One row per staff user.
+  - `role` in `staff|doctor|admin`.
+- Roles:
+  - Determine which APIs/features are accessible.
+
+### 4.2 Row-Level Security
+
+Key patterns:
+
+- Patients:
+  - Can select/update their own `patient_profile`.
+  - Can select their own `appointments` and `notifications`.
+- Staff:
+  - Verified by `staff_profiles`.
+  - Can select appointments and patient records required for operations.
+- Public:
+  - Can select `doctors` (active) and `clinic_settings`.
+
+Agent rules:
+
+- Never bypass RLS intent with raw service-role reads exposed to clients.
+- Always reason from `auth.uid()`; never from raw NRIC.
+
+---
+
+## 5. Core Runtime Modules
+
+All under `src/lib`. These are canonical; do not duplicate.
+
+### 5.1 supabaseServer.ts
+
+- Creates Supabase client with `SUPABASE_SERVICE_ROLE_KEY`.
+- Only used in:
+  - `src/pages/api/**/*`
+  - Server-only utilities.
+- `persistSession: false`.
+- Always treat service role key as secret.
+
+### 5.2 supabaseClient.ts
+
+- Creates browser Supabase client from `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Used for:
+  - Login/logout via Supabase Auth.
+  - Limited safe reads.
+- Heavy business logic belongs in API routes.
+
+### 5.3 auth.ts
+
+Responsibilities:
+
+- `getUserFromRequest(req)`:
+  - Reads JWT from `Authorization: Bearer <token>` or `sb-access-token` cookie.
+  - Uses `supabaseServer.auth.getUser(token)`.
+- `requireAuth(req)`:
+  - Uses `getUserFromRequest`.
+  - Throws/indicates `UNAUTHORIZED` if missing/invalid.
+- `requireStaff(req)`:
+  - Uses `requireAuth`.
+  - Verifies `staff_profiles` row with `role IN ('staff','doctor','admin')`.
+  - Throws/indicates `FORBIDDEN` if not staff.
+  - MUST be used for `/api/staff/*`.
+
+### 5.4 validation.ts
+
+- Zod schemas for:
+  - Patient profile inputs (name, NRIC, DOB, language, CHAS tier).
+  - Booking inputs (doctor_id, scheduled_start).
+- Ensures API handlers have consistent validation.
+
+### 5.5 slots.ts
+
+- `getAvailableSlots(doctorId, date)`:
+  - Uses `clinic_settings.slot_duration_min` and configured window.
+  - Reads `appointments` to filter booked slots.
+  - Returns deterministic slot list.
+
+### 5.6 queue.ts
+
+- `getNextQueueNumber(doctorId, datetime)`:
+  - Scope: given doctor + day.
+  - Reads existing `queue_number`s.
+  - Returns next sequential (e.g. A001 → A002).
+- Used only by staff status API to assign queue numbers on `arrived`.
+
+### 5.7 notifications.ts (Planned)
+
+- To be implemented when Phase 4 is reached.
+- Wrap Twilio:
+  - `sendBookingConfirmation`
+  - `sendAppointmentReminder`
+- Best-effort only; must not break booking.
+
+---
+
+## 6. Page & API Contracts
+
+This section defines how pages and APIs fit together.
+
+### 6.1 Patient Flows
+
+**Pages**
+
+- `/` (`src/pages/index.tsx`)
+  - Dynamic landing aligned with `/static/index.html`.
+  - Clear CTAs: Book, Manage Profile, Staff Portal.
+
+- `/login` (`src/pages/login.tsx`)
+  - Integrates Supabase Auth for email/OTP login.
+
+- `/profile` (`src/pages/profile.tsx`)
+  - Requires auth.
+  - Uses `/api/patient/profile.get` to load.
+  - Uses `/api/patient/profile.put` to save.
+
+- `/book` (`src/pages/book.tsx`)
+  - Requires auth + existing `patient_profile`.
+  - Allows doctor + date + slot selection.
+  - Submits to `/api/appointments/book.post`.
+  - Shows upcoming appointments via `/api/appointments/mine.get`.
+
+**APIs**
+
+- `/api/patient/profile.get`
+  - GET, auth required.
+  - Returns profile for current `auth.uid()` or 404/null.
+
+- `/api/patient/profile.put`
+  - PUT, auth required.
+  - Validates input.
+  - Hashes + masks NRIC.
+  - Upserts `patient_profiles` row for `auth.uid()`.
+
+- `/api/doctors/index.get`
+  - GET, public.
+  - Returns active doctors.
+
+- `/api/slots/index.get`
+  - GET, query: `doctor_id`, `date`.
+  - Calls `getAvailableSlots`.
+
+- `/api/appointments/book.post`
+  - POST, auth required.
+  - Validates via Zod.
+  - Confirms `patient_profile` exists for user.
+  - Inserts into `appointments`.
+  - (Future) triggers best-effort Twilio confirmation.
+
+- `/api/appointments/mine.get`
+  - GET, auth required.
+  - Uses RLS + `patient_profiles` to return only caller’s appointments.
+
+### 6.2 Staff / Doctor Flows
+
+**Page**
+
+- `/staff/appointments` (`src/pages/staff/appointments.tsx`)
+  - Requires staff session (enforced in client flow + server via `requireStaff`).
+  - Calls `/api/staff/appointments.get`.
+  - Renders today’s appointments with:
+    - Time
+    - Patient name
+    - Doctor name
+    - Status
+    - Queue number
+  - Provides actions (e.g., Mark Arrived / In Consultation / Completed / No Show).
+
+**APIs**
+
+- `/api/staff/appointments.get`
+  - GET, `requireStaff`.
+  - Returns:
+    - Today’s appointments (clinic-wide).
+    - Fields for UI, respecting PDPA (no raw NRIC).
+
+- `/api/staff/appointment-status.post`
+  - POST, `requireStaff`.
+  - Input: `appointment_id`, `status` in allowed transitions.
+  - On `arrived`:
+    - If no `queue_number`, calls `getNextQueueNumber`.
+  - Persists status updates.
+
+### 6.3 Cron / Notifications (Planned)
+
+- `/api/cron/reminders.post`
+  - POST.
+  - Secured using `CRON_SECRET` or platform-level protection.
+  - Behavior:
+    - Find `booked` appointments in next 24 hours.
+    - Use `notifications.ts` to send reminders.
+    - Record results in `notifications`.
+
+---
+
+## 7. Frontend Design & UX
+
+Goals:
+
+- Senior-friendly:
+  - Large text, high contrast, big tap targets.
+- Calm and predictable:
+  - No complex animations or hidden flows.
+- Consistent:
+  - Dynamic landing uses same layout/visual language as static mockup.
+
+Implementation notes:
+
+- `src/styles/tokens.css`:
+  - Centralizes colors, spacing, typography, radii.
+- `src/styles/globals.css`:
+  - Imports tokens.
+  - Applies resets and base typography.
+- `src/components/ui/*`:
+  - Provide reusable primitives to enforce consistent spacing and sizing.
+
+Agents:
+
+- Use Mantine + UI primitives.
+- Follow static mockup for landing.
+- Avoid introducing new UI frameworks.
+
+---
+
+## 8. Testing & QA
+
+Target (Phase 5 in checklist):
+
+- Jest:
+  - Unit:
+    - `lib/slots.ts`
+    - `lib/queue.ts`
+  - Integration:
+    - Booking API
+    - Staff APIs
+- Playwright:
+  - E2E flows:
+    - Landing → login → profile → book.
+    - Staff sees + updates appointments.
+
+Rules:
+
+- No live Supabase/Twilio in unit/integration tests.
+- Use mocks/stubs.
+- Focus on correctness of:
+  - RLS boundaries.
+  - Booking invariants.
+  - Queue assignment.
+
+---
+
+## 9. Operational & Security Considerations
+
+Environment variables:
+
+- Public:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `NEXT_PUBLIC_CLINIC_*`
+- Server-only:
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SUPABASE_URL` (if used)
+  - `TWILIO_*` (future)
+  - `CRON_SECRET`
+  - `NRIC_HASH_SECRET`
+
+Guidelines:
+
+- Never expose server-only secrets client-side.
+- RLS must always be the foundation:
+  - Prefer queries that rely on `auth.uid()` and policy constraints.
+- Error handling:
+  - Map failures to appropriate HTTP codes.
+  - Do not leak sensitive data in errors.
+
+---
+
+## 10. Implementation & Evolution Checklist
+
+This PAD is tightly integrated with:
+
+- [`docs/master_execution_todo_checklist.md`](docs/master_execution_todo_checklist.md:1)
+- [`AGENT_new.md`](AGENT_new.md:1)
+- [`README_new.md`](README_new.md:1)
+
+For any new work:
+
+1. Confirm the target phase and checklist items.
+2. Ensure new code:
+   - Uses existing libs (`auth`, `slots`, `queue`, etc.).
+   - Matches DB schema column names.
+   - Preserves auth/RLS semantics.
+3. Keep diffs minimal and well-documented.
+4. Update:
+   - PAD (this file)
+   - AGENT.md
+   - README
+   - master_execution_todo_checklist
+when architecture or contracts change.
+
+---
+
+## 11. Summary
+
+This Project Architecture Document:
+
+- Aligns the documented architecture with the actual codebase and schema.
+- Defines a clear and enforceable structure for:
+  - Pages and API routes.
+  - Lib helpers.
+  - Data model and RLS.
+  - Staff console and queue behavior.
+- Is intentionally minimal, boring, and safe.
+
+If you follow this PAD (with `AGENT.md` and `README.md` updated from their `*_new` counterparts), you can:
+
+- Extend the MVP without breaking core flows.
+- Maintain PDPA-conscious behavior.
+- Keep the system operable for a single clinic and a single maintainer.

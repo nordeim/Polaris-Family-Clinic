@@ -1,5 +1,6 @@
 # Gabriel Family Clinic MVP – AI Coding Agent Briefing (Single Source of Truth)
 
+Author: Kilo Code (AI Technical Partner)  
 Audience:
 - AI coding agents handling this repo.
 - Senior engineers reviewing/merging PRs.
@@ -8,11 +9,10 @@ Purpose:
 - Provide one authoritative mental model of:
   - What this product is.
   - How it is architected.
-  - How the codebase is supposed to look when fully implemented.
+  - How the codebase is supposed to look in this repo (current + near-term).
   - How to make changes safely with minimal mistakes.
-- Any future AI agent should read this file before touching code.
-
-Keep this document in sync when architecture or contracts change.
+- Any future AI agent must read this file before touching code.
+- Keep this document in sync when architecture or contracts change.
 
 ---
 
@@ -28,10 +28,10 @@ Problem:
   - Minimal ops overhead.
   - PDPA-conscious data handling.
 
-Constraints (non-negotiable):
-- 1 clinic (no multi-tenant complexity).
-- 1 developer can build/maintain.
-- 4–6 week MVP to production.
+Non-negotiable constraints:
+- One clinic (no multi-tenant complexity).
+- One developer can build and maintain.
+- 4–6 week MVP to dependable production.
 - Zero DevOps:
   - Next.js (Pages Router) on Vercel.
   - Supabase (Postgres + Auth + RLS).
@@ -45,131 +45,144 @@ Constraints (non-negotiable):
   - RLS enforced at DB with `auth.uid()`.
   - Least-privilege everywhere.
 
-MVP Scope:
+MVP Scope (this repo implements the backbone):
 - Patients:
-  - Login via Supabase Auth (email magic link or phone OTP).
-  - Create one `patient_profile` per user.
+  - Login via Supabase Auth (magic link / OTP).
+  - Create/manage exactly one `patient_profile` per `auth.uid()`.
   - Book appointment (doctor, date, slot).
-  - View upcoming appointments.
+  - View upcoming appointments (own only).
 - Staff/Doctors:
-  - Login via same Supabase Auth.
-  - Identified via `staff_profiles` (role in `staff|doctor|admin`).
+  - Login via Supabase Auth.
+  - Identified via `staff_profiles` (`staff|doctor|admin`).
   - View today’s appointments.
   - Update status:
     - `booked → arrived → in_consultation → completed / no_show`.
-  - Queue numbers auto-assigned on arrival.
+  - Queue numbers auto-assigned on arrival (per doctor/day).
 - System:
   - All critical access governed by schema + RLS.
   - Notifications:
-    - SMS confirmations (best-effort).
-    - Optional 24h reminders via cron endpoint.
+    - SMS confirmations and reminders are best-effort, future phases.
 
 Non-Goals for MVP:
 - Multi-clinic.
 - Full EMR.
 - Payments.
 - Heavy analytics.
-- Anything “clever” that risks reliability or complexity.
+- Any “clever” infra or abstractions that add risk or complexity.
+
+Agents:
+- Always optimize for:
+  - Safety, clarity, and operational simplicity over cleverness.
 
 ---
 
-## 2. Canonical Architecture (How It All Fits Together)
+## 2. Canonical Architecture (How It Fits Together)
 
 High-level stack:
 - Next.js 14+ (Pages Router, TypeScript).
-- Mantine UI as primary component library.
-- Light custom UI primitives (Shadcn-inspired) layered via CSS.
+- Mantine UI as primary component library, plus small custom primitives.
 - Supabase Postgres + Supabase Auth.
-- Twilio for SMS.
+- Twilio for notifications (future phases).
 
 Key principles:
 - Identity:
   - Supabase `auth.users` is the single source of truth.
   - Every patient and staff row links to `auth.users.id`.
 - RLS:
-  - Enforced on all sensitive tables.
-  - Uses `auth.uid()`; staff access controlled via `staff_profiles`.
+  - Enforced on all sensitive tables, using `auth.uid()`.
+  - Staff access mediated via `staff_profiles`.
 - API:
   - Next.js API Routes under `src/pages/api/`.
-  - Use server-side Supabase client with service role key.
-  - Use `requireAuth` + role helpers for all protected routes.
+  - Use server-side Supabase client (`supabaseServer`) with service role key.
+  - Use `requireAuth` + `requireStaff` for all protected routes.
 - Frontend:
   - Pages (`src/pages`) orchestrate flows.
-  - Components (`src/components`) handle presentational and local interaction.
-  - Client-side Supabase only for auth (login/logout) and limited reads; prefer internal APIs.
+  - Components (`src/components`) provide presentational/logical units.
+  - Client-side Supabase only for auth and safe reads; business logic in API routes.
+
+Agents:
+- Must treat this architecture as normative for all changes.
+- Must not introduce new infra (Prisma, App Router, tRPC, etc.) unless explicitly requested.
 
 ---
 
 ## 3. Database Model (Authoritative)
 
-File:
-- [database_schema.sql](database_schema.sql:1) (and mirrored [supabase/schema.sql](supabase/schema.sql:1))
+Canonical schema:
+- [`database_schema.sql`](database_schema.sql:1) (mirrored in [`supabase/schema.sql`](supabase/schema.sql:1)).
 
 Core tables:
 
-- `patient_profiles`
-  - `id` UUID PK
-  - `user_id` (FK → `auth.users.id`, unique)
-  - `full_name`
-  - `nric_hash`
-  - `nric_masked`
-  - `dob`
-  - `language`
-  - `chas_tier`
-  - RLS:
-    - Patient can see/update own row.
-    - Staff (via `staff_profiles`) can read for clinic ops.
+### `patient_profiles`
 
-- `staff_profiles`
-  - `id` UUID PK
-  - `user_id` (FK → `auth.users.id`, unique)
-  - `display_name`
-  - `role` in `staff|doctor|admin`
-  - RLS:
-    - Self can see self.
-    - Admins see all.
+- `id` UUID PK
+- `user_id` (FK → `auth.users.id`, unique)
+- `full_name`
+- `nric_hash` (deterministic)
+- `nric_masked`
+- `dob`
+- `language`
+- `chas_tier`
+- RLS:
+  - Patient can see/update own row (`auth.uid() = user_id`).
+  - Staff (via `staff_profiles`) can read for ops.
 
-- `doctors`
-  - `id` UUID PK
-  - `staff_profile_id` (optional FK)
-  - `name`
-  - `photo_url`
-  - `languages` (text[])
-  - `is_active` boolean
-  - RLS:
-    - Public SELECT for active doctors.
+### `staff_profiles`
 
-- `clinic_settings`
-  - Single-row configuration:
-    - clinic info, timezone, `slot_duration_min`, `booking_window_days`
-  - RLS:
-    - Public SELECT.
+- `id` UUID PK
+- `user_id` (FK → `auth.users.id`, unique)
+- `display_name`
+- `role` in `staff|doctor|admin`
+- RLS:
+  - Self can see own row.
+  - Admins can see all.
 
-- `appointments`
-  - `id` UUID PK
-  - `patient_id` FK → `patient_profiles`
-  - `doctor_id` FK → `doctors`
-  - `scheduled_start` timestamptz
-  - `status` in `booked|arrived|in_consultation|completed|no_show|cancelled`
-  - `queue_number` text (e.g., A001)
-  - `reason` text (optional)
-  - RLS:
-    - Patients: can select only those linked to their `patient_profile`.
-    - Staff/Doctors/Admin: can select/update via `staff_profiles` role.
-    - Insert:
-      - Allowed when `patient_id` matches caller’s `patient_profile`.
+### `doctors`
 
-- `notifications`
-  - Records of SMS/WhatsApp notifications.
-  - `type` in `confirmation|reminder|queue_alert`.
-  - RLS:
-    - Patients see their own.
-    - Staff see all.
+- `id` UUID PK
+- `staff_profile_id` (optional FK → `staff_profiles.id`)
+- `name`
+- `photo_url`
+- `languages` (text[])
+- `is_active` boolean
+- RLS:
+  - Public SELECT of active doctors.
+
+### `clinic_settings`
+
+- Single-row configuration:
+  - Clinic info, timezone, `slot_duration_min`, `booking_window_days`
+- RLS:
+  - Public SELECT.
+
+### `appointments`
+
+- `id` UUID PK
+- `patient_id` FK → `patient_profiles`
+- `doctor_id` FK → `doctors`
+- `scheduled_start` timestamptz
+- `status` in `booked|arrived|in_consultation|completed|no_show|cancelled`
+- `queue_number` text (e.g. `A001`)
+- `reason` text (optional)
+- RLS:
+  - Patients: select only those where `patient_id` is theirs.
+  - Staff/Doctors/Admin: select/update via `staff_profiles`.
+  - Insert allowed only when `patient_id` belongs to `auth.uid()`.
+
+### `notifications` (future)
+
+- Records SMS/WhatsApp notifications.
+- `type` in `confirmation|reminder|queue_alert`.
+- RLS:
+  - Patients see their own.
+  - Staff see all.
 
 Security rules:
-- All relevant tables have RLS enabled.
+- RLS enabled everywhere.
 - Policies explicitly defined in `database_schema.sql`.
-- Agents MUST ensure new code respects these policies; never bypass with arbitrary service-role operations that contradict them.
+- Agents:
+  - MUST respect these rules.
+  - MUST NOT bypass with direct service-role reads that contradict RLS intent.
 
 ---
 
@@ -178,336 +191,344 @@ Security rules:
 Location:
 - `src/lib/`
 
-Key files:
+### 4.1 Supabase Server Client
 
-1) Supabase Server Client
-- [src/lib/supabaseServer.ts](src/lib/supabaseServer.ts:1)
-- Uses:
-  - URL from `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_URL`.
-  - Key from `SUPABASE_SERVICE_ROLE_KEY` (server only).
-- Rules:
-  - ONLY use in server-side contexts (API routes, scripts).
-  - NEVER expose service key to browser.
-  - `auth: { persistSession: false }`.
+File:
+- [`src/lib/supabaseServer.ts`](src/lib/supabaseServer.ts:1)
 
-2) Supabase Browser Client
-- [src/lib/supabaseClient.ts](src/lib/supabaseClient.ts:1)
-- Uses:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- Use cases:
-  - Login/logout (Supabase Auth).
-  - Limited client-side reads where safe.
-  - Prefer calling internal APIs for business logic.
+Rules:
+- Uses `SUPABASE_SERVICE_ROLE_KEY` server-side only.
+- `auth: { persistSession: false }`.
+- Only import in:
+  - API routes under `src/pages/api/`.
+  - Server-only scripts.
+- Never leak service key to client.
 
-3) Auth Helpers
-- [src/lib/auth.ts](src/lib/auth.ts:1)
-- Functions:
-  - `getUserFromRequest(req)`:
-    - Reads `Authorization: Bearer <token>` or `sb-access-token` cookie.
-    - Uses `supabaseServer.auth.getUser(token)`.
-  - `requireAuth(req)`:
-    - Wraps `getUserFromRequest`.
-    - Throws `Error('UNAUTHORIZED')` if missing.
-- Expected extension:
-  - `requireStaff(req)`:
-    - Check `staff_profiles` for roles in `['staff', 'doctor', 'admin']`.
-    - Throw/return forbidden if not staff.
+### 4.2 Supabase Browser Client
 
-4) Domain Utilities (to be present)
-- `src/lib/validation.ts`
-  - Zod schemas for:
-    - `ProfileSchema`
-    - `BookAppointmentSchema`
-- `src/lib/slots.ts`
+File:
+- [`src/lib/supabaseClient.ts`](src/lib/supabaseClient.ts:1)
+
+Rules:
+- Uses `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- For:
+  - Login/logout via Supabase Auth.
+  - Safe client-side reads.
+- For business logic, prefer internal API routes.
+
+### 4.3 Auth Helpers
+
+File:
+- [`src/lib/auth.ts`](src/lib/auth.ts:1)
+
+Functions:
+- `getUserFromRequest(req)`:
+  - Reads `Authorization: Bearer <token>` or `sb-access-token` cookie.
+  - Uses `supabaseServer.auth.getUser(token)`.
+- `requireAuth(req)`:
+  - Wraps `getUserFromRequest`.
+  - Throws/propagates `UNAUTHORIZED` if no user.
+- `requireStaff(req)`:
+  - Calls `requireAuth`.
+  - Confirms `staff_profiles` row with role in `['staff', 'doctor', 'admin']` for `user_id`.
+  - Throws/propagates `FORBIDDEN` if not staff.
+  - MUST be used by all `/api/staff/*` routes.
+
+Agents:
+- MUST reuse `requireAuth` and `requireStaff`, not re-implement.
+
+### 4.4 Domain Utilities
+
+Expected/implemented:
+
+- `src/lib/validation.ts`:
+  - Zod schemas:
+    - Profile input.
+    - Booking input.
+- `src/lib/slots.ts`:
   - `getAvailableSlots(doctorId, date)`:
-    - Uses `clinic_settings.slot_duration_min`.
-    - Computes working hours (e.g., 09-12, 14-17).
-    - Filters out booked slots via `appointments`.
-- `src/lib/queue.ts`
+    - Uses `clinic_settings.slot_duration_min` and booking window.
+    - Filters out booked `appointments`.
+- `src/lib/queue.ts`:
   - `getNextQueueNumber(doctorId, datetime)`:
-    - For all appointments same day, pick max `queue_number` and increment A001 → A002…
-- `src/lib/notifications.ts`
+    - Per doctor/day.
+    - Monotonic sequence like `A001`, `A002`, ...
+- `src/lib/notifications.ts` (future):
   - Wraps Twilio:
     - `sendBookingConfirmation`
     - `sendAppointmentReminder`
-  - Uses `notifications` table.
-  - Must be best-effort; never break booking if Twilio fails.
+  - Must be best-effort; must not break booking.
 
 Agents:
 - MUST reuse these helpers.
-- MUST NOT reimplement auth or Supabase logic ad hoc.
+- MUST NOT duplicate auth, slots, or queue logic.
 
 ---
 
-## 5. Page & API Surface (Target End State)
+## 5. Page & API Surface (This Repo’s Target)
 
-All paths below are Pages Router style under `src/pages`.
+All below are Next.js Pages Router routes under `src/pages`.
 
 ### 5.1 Public / Patient
 
 Pages:
+
 - `/` → `src/pages/index.tsx`
-  - Hero, Why Us, How It Works, Seniors, Staff, CTA.
+  - Dynamic landing page mirroring static mockup.
   - CTAs:
     - `/book`
     - `/profile`
-    - `/staff/appointments`
-  - Uses Mantine + custom UI primitives to mirror static mockup.
+    - `/staff/appointments` (for staff).
 - `/login` → `src/pages/login.tsx`
-  - Uses Supabase client for magic-link/OTP.
+  - Entry to Supabase Auth (OTP / magic link).
 - `/profile` → `src/pages/profile.tsx`
   - Authenticated.
   - Loads via `/api/patient/profile.get`.
-  - Renders `ProfileForm`.
+  - Submits via `/api/patient/profile.put`.
 - `/book` → `src/pages/book.tsx`
-  - Authenticated.
-  - Renders `BookingForm`.
-  - Uses `/api/doctors`, `/api/slots`, `/api/appointments/book.post`.
-  - Shows success and may include `UpcomingAppointmentsList`.
+  - Authenticated + profile required.
+  - Uses:
+    - `/api/doctors/index.get`
+    - `/api/slots/index.get`
+    - `/api/appointments/book.post`
+  - Shows upcoming appointments via `/api/appointments/mine.get`.
 
-Patient APIs:
+Key APIs (patient-facing):
+
 - `/api/patient/profile.get`
-  - GET.
-  - Require auth.
-  - Returns current patient profile or null.
 - `/api/patient/profile.put`
-  - PUT.
-  - Require auth.
-  - Validate via `ProfileSchema`.
-  - Hash + mask NRIC.
-  - Upsert `patient_profiles` with `user_id = auth user`.
 - `/api/doctors/index.get`
-  - GET.
-  - Public.
-  - Returns active doctors.
 - `/api/slots/index.get`
-  - GET.
-  - Query: `doctor_id`, `date`.
-  - Uses `getAvailableSlots`.
 - `/api/appointments/book.post`
-  - POST.
-  - Require auth.
-  - Validate via `BookAppointmentSchema`.
-  - Ensure `patient_profile` exists.
-  - Insert appointment.
-  - (Phase 4) Fire-and-forget Twilio confirmation.
 - `/api/appointments/mine.get`
-  - GET.
-  - Require auth.
-  - Return appointments for current patient.
 
 ### 5.2 Staff / Doctor
 
 Pages:
-- `/staff/login`
-  - Staff login form (Supabase magic link).
-- `/staff/appointments`
+
+- `/staff/appointments` → `src/pages/staff/appointments.tsx`
   - Staff dashboard:
     - Today’s appointments.
-    - Uses `TodayAppointmentsTable` + `QueueControls`.
+    - Status controls.
+    - Queue indicators.
 
-Staff APIs:
+APIs:
+
 - `/api/staff/appointments.get`
   - GET.
-  - Require auth + staff role.
-  - Returns today’s appointments with:
-    - `patient_full_name`
-    - `doctor_name`
-    - `status`
-    - `queue_number`
+  - Require `requireStaff`.
+  - Returns today’s appointments:
+    - Patient name,
+    - Doctor name,
+    - Status,
+    - Queue number.
 - `/api/staff/appointment-status.post`
   - POST.
-  - Require auth + staff role.
+  - Require `requireStaff`.
   - Input: `appointment_id`, `status`.
   - On `arrived`:
     - Assign queue number via `getNextQueueNumber` if missing.
-  - Update appointment.
+  - Update `appointments` row.
 
-### 5.3 Cron / Notifications
+### 5.3 Cron / Notifications (Future)
 
 - `/api/cron/reminders.post`
   - POST.
-  - Auth via `CRON_SECRET` (e.g., `Authorization: Bearer <CRON_SECRET>`).
+  - Auth via `CRON_SECRET`.
   - Finds `booked` appointments in next 24h.
-  - Sends reminders via `sendAppointmentReminder`.
-  - Records in `notifications`.
+  - Sends reminders via `notifications.ts`.
+  - Records results in `notifications`.
 
 Agents:
 - When implementing/altering APIs:
-  - Preserve method semantics, status codes, and validation.
-  - Prefer explicit Zod schemas.
-  - Always wrap `requireAuth` in try/catch and map to 401/403.
+  - Preserve HTTP methods and status codes.
+  - Use Zod for validation.
+  - Map:
+    - `UNAUTHORIZED` → 401,
+    - `FORBIDDEN` → 403,
+    - Validation errors → 400,
+    - Unknown → 500.
+  - Keep handlers thin; delegate to `lib` where possible.
 
 ---
 
 ## 6. Frontend Design System Expectations
 
 Baseline:
-- Mantine is primary UI library.
+- Mantine as primary UI library.
 - `src/styles/globals.css`:
-  - Includes resets.
-  - Imports `tokens.css` defining:
-    - Colors, fonts, radii, shadows.
+  - Global resets.
+  - Uses `src/styles/tokens.css` for:
+    - Colors, typography, radii, spacing, etc.
+- Ticket:
+  - Dynamic landing page should visually align with `static/index.html` and `static/styles/globals.css`.
 
-UI Components (as per `phaseX-static-app`):
-- `src/components/ui/button.tsx` → `UiButton`
-- `src/components/ui/card.tsx` → `UiCard`
-- `src/components/ui/badge.tsx` → `UiBadge`
-- `src/components/ui/section.tsx` → `Section`
-- Optional `/style-guide` page to visualize tokens/components.
+Core UI primitives:
+- `src/components/ui/button.tsx`
+- `src/components/ui/card.tsx`
+- `src/components/ui/badge.tsx`
+- `src/components/ui/section.tsx`
 
 UX rules:
 - Senior-friendly:
-  - Large font sizes for primary flows.
-  - High contrast.
-  - Clear affordances.
-- Minimal JS:
-  - Prefer server-driven / API-driven data.
-  - Avoid obfuscated client state.
+  - Large text, touch targets, high contrast.
+- Simple:
+  - Minimal steps, no confusing navigation.
+- Predictable:
+  - No hidden state; server-driven where possible.
 
 Agents:
-- For new UI:
-  - Use Mantine + these primitives.
-  - Match the tone of the landing mockup.
-  - Avoid introducing competing UI frameworks.
+- Use these primitives and Mantine.
+- Do not add a second UI framework.
 
 ---
 
 ## 7. Testing & QA Expectations
 
 Planned tooling:
-- Jest for:
+- Jest:
   - Unit tests:
     - `lib/slots.ts`
     - `lib/queue.ts`
   - Integration tests:
-    - API handlers with mocked `supabaseServer`, `requireAuth`, etc.
-- Playwright for:
-  - Minimal E2E:
+    - API handlers, mocked Supabase/Twilio.
+- Playwright:
+  - E2E:
     - Landing loads.
-    - `/book` accessible.
-    - (Extended) Happy path: login → profile → book → staff view.
+    - `/book` flow.
+    - Staff sees appointments.
 
-Key points:
-- Tests must:
-  - Use module mocks (no real Supabase/Twilio in unit/integration).
-  - Respect architecture (no hitting production services).
-- Manual QA scripts:
-  - Defined in docs; cover:
-    - Patient flow.
-    - Staff flow.
-    - RLS and role separation.
+Guidelines:
+- No live Supabase/Twilio calls in unit/integration.
+- Use mocks/stubs.
+- Focus on critical flows:
+  - Patient profile + booking.
+  - Staff viewing and updating appointments.
+  - RLS/role separation.
 
 Agents:
 - When adding/changing behavior:
-  - Update or add tests in `tests/` following existing patterns.
-  - Do not add heavy frameworks or complex test infra.
+  - Mirror changes in tests.
+  - Keep tests small and focused.
 
 ---
 
 ## 8. Operational & Security Rules For Agents
 
-1) Environment Variables:
-- Public:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - `NEXT_PUBLIC_CLINIC_*`
-- Server-only:
-  - `SUPABASE_SERVICE_ROLE_KEY`
-  - `SUPABASE_URL` (if used)
-  - `TWILIO_ACCOUNT_SID`
-  - `TWILIO_AUTH_TOKEN`
-  - `TWILIO_SMS_FROM`
-  - `CRON_SECRET`
-  - `NRIC_HASH_SECRET`
-- Never:
-  - Log secrets.
-  - Expose server-only keys to client bundles.
+1) Environment Variables
 
-2) Auth & RLS:
-- Always:
-  - Use `requireAuth` for patient-specific or staff-specific APIs.
-  - For staff routes, assert `staff_profiles` role.
-- Never:
-  - Bypass with raw service-role queries that ignore RLS intent.
-  - Query by plain NRIC; always via `patient_profiles` + `auth.uid()` pattern.
+Public:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_CLINIC_*`
 
-3) Error Handling:
-- API handlers:
-  - 405 for wrong methods.
-  - 401 if no/invalid auth.
-  - 403 if not staff.
-  - 400 for validation failures (with details).
-  - 500 for unexpected errors (logged, non-sensitive).
-- Notifications:
-  - Fail silently (log & `notifications` record) without breaking main flow.
+Server-only:
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_URL` (if used)
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_SMS_FROM`
+- `CRON_SECRET`
+- `NRIC_HASH_SECRET`
 
-4) Code Style:
+Never:
+- Log secrets.
+- Expose server-only keys in client bundles.
+
+2) Auth & RLS
+
+Always:
+- Use `requireAuth` for patient-specific routes.
+- Use `requireStaff` for staff routes.
+- Align with `database_schema.sql` RLS design.
+
+Never:
+- Bypass RLS with arbitrary service-role queries.
+- Query or filter by plain NRIC.
+
+3) Error Handling
+
+API handlers:
+- 405: wrong method.
+- 401: unauthenticated.
+- 403: unauthorized (e.g., not staff).
+- 400: validation failures (Zod errors).
+- 500: unexpected errors (log non-sensitive context).
+
+Notifications (future):
+- Failures must not break bookings.
+- Log to `notifications` and continue.
+
+4) Code Style
+
 - TypeScript everywhere.
-- Keep files small and focused.
-- Use consistent imports:
-  - `@/lib/...`, `@/components/...`, `@/pages/api/...` as configured.
+- Keep modules small, focused.
+- Use import aliases (`@/lib/...`, `@/components/...`) as configured.
 - Avoid:
-  - Introducing new core infrastructure (Prisma, tRPC, NextAuth, etc.) unless explicitly requested.
+  - New frameworks (tRPC, Prisma, NextAuth, etc.) unless specifically requested.
 
 ---
 
-## 9. How To Safely Handle Future PRs (Agent Checklist)
+## 9. How To Safely Handle Future Work (Agent Checklist)
 
 Before making any change:
-1) Read:
-   - This file: [AGENT.md](AGENT.md:1)
-   - [docs/project_review_and_codebase_understanding.md](docs/project_review_and_codebase_understanding.md:1)
-   - [docs/master_execution_todo_checklist.md](docs/master_execution_todo_checklist.md:1)
-   - Relevant phase doc(s) for the area you’re modifying.
 
-2) Verify context:
-   - Does the change align with:
-     - Single clinic assumption?
-     - RLS and PDPA constraints?
-     - Senior-first simplicity?
-     - Existing file/route conventions?
+1. Read:
+   - [`AGENT.md`](AGENT.md:1) (use `AGENT_new.md` content once applied).
+   - [`docs/project_review_and_codebase_understanding.md`](docs/project_review_and_codebase_understanding.md:1)
+   - [`docs/master_execution_todo_checklist.md`](docs/master_execution_todo_checklist.md:1)
+   - Relevant phase doc(s).
 
-3) When editing:
-   - Respect existing helper libraries; do not duplicate logic.
-   - Keep API contracts backward-compatible unless spec says otherwise.
-   - Ensure schema usage matches `database_schema.sql`.
+2. Verify:
+   - Alignment with:
+     - Single-clinic assumption.
+     - RLS/PDPA requirements.
+     - Senior-first, staff-friendly UX.
+     - Current file/route conventions.
 
-4) After editing:
+3. When editing:
+   - Reuse `auth.ts`, `supabaseServer.ts`, `supabaseClient.ts`, `slots.ts`, `queue.ts`.
+   - Keep API contracts consistent unless explicitly updating spec.
+   - Ensure DB queries match `database_schema.sql`.
+
+4. After editing:
    - For APIs:
-     - Check for correct HTTP methods, status codes, try/catch.
+     - Methods, status codes, error mapping.
    - For components:
-     - Ensure imports are valid.
-     - No reference to undefined routes.
+     - Imports valid, no broken routes.
    - For DB interactions:
-     - Confirm table/column names match schema.
+     - Table/column names correct.
    - For queue/slots:
-     - Maintain deterministic behavior; avoid “smart” logic.
+     - Deterministic, no racey logic.
 
-5) Prefer minimal diffs:
-   - Make focused, well-scoped changes.
-   - Update corresponding docs/tests if behavior changes.
+5. Prefer minimal diffs:
+   - Focused, testable changes.
+   - Update docs/tests accordingly.
 
 If uncertain:
-- Default to simpler, more explicit behavior.
-- Do not introduce new concepts without grounding them in:
+- Choose simpler, more explicit behavior.
+- Do not introduce new concepts without anchoring in:
   - PRD
   - PAD
-  - This AGENT guide
+  - This AGENT guide.
 
 ---
 
 ## 10. Summary
 
-If you are an AI coding agent:
+If you are an AI coding agent working on this repo:
 
-- Treat this AGENT.md as your operating manual.
-- Combine it with the existing docs and schema; they are consistent by design.
+- Treat `AGENT.md` (once updated from `AGENT_new.md`) as your operating manual.
+- Combine it with:
+  - `Project_Requirements_Document.md`
+  - `Project_Architecture_Document.md`
+  - `database_schema.sql`
+  - `docs/master_execution_todo_checklist.md`
 - Your priorities:
-  1) Do not break core patient/staff flows.
+  1) Do not break core patient or staff flows.
   2) Do not weaken security/RLS/PDPA posture.
   3) Maintain senior-friendly, staff-friendly simplicity.
-  4) Keep the implementation aligned with the existing architectural blueprint.
+  4) Keep implementation aligned with the documented architecture.
+  5) Make small, well-reasoned, well-documented changes.
 
-Follow these rules, and you can implement features and fixes with minimal supervision and high confidence.
+If you follow these rules, you can implement features and fixes with high confidence and minimal supervision.
