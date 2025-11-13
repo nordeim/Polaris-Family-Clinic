@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import dayjs from 'dayjs';
-import { requireAuth } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabaseServer';
-import { assertStaff } from '@/lib/queue';
+import { requireStaff } from '@/lib/auth';
 
 /**
  * GET /api/staff/appointments.get
@@ -23,8 +22,8 @@ import { assertStaff } from '@/lib/queue';
  * }
  *
  * Security:
- * - requireAuth
- * - assertStaff(user.id) must succeed (role in staff|doctor|admin).
+ * - requireStaff(req): user must be staff|doctor|admin.
+ * - DB-level RLS provides defense in depth.
  */
 export default async function handler(
   req: NextApiRequest,
@@ -32,21 +31,24 @@ export default async function handler(
 ): Promise<void> {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).end();
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
-  let userId: string;
   try {
-    const user = await requireAuth(req);
-    userId = user.id as string;
-    await assertStaff(userId);
+    await requireStaff(req);
   } catch (err: any) {
+    if (err?.message === 'UNAUTHORIZED') {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
     if (err?.message === 'FORBIDDEN') {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
-    res.status(401).json({ error: 'Unauthorized' });
+    // eslint-disable-next-line no-console
+    console.error('Error in requireStaff for staff/appointments.get', err);
+    res.status(500).json({ error: 'Internal server error' });
     return;
   }
 
