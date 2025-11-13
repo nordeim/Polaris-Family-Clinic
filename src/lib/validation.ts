@@ -1,44 +1,40 @@
 import { z } from 'zod';
 
 /**
- * Zod schemas aligned with database_schema.sql and AGENT.md.
+ * Shared Zod schemas for API validation.
  *
- * These are the canonical validation contracts for:
- * - Patient profile upsert
- * - Appointment booking
- *
- * Notes:
- * - Keep in sync with:
- *   - database_schema.sql
- *   - API handlers under src/pages/api/*
- *   - AGENT.md
+ * These schemas must stay aligned with:
+ * - database_schema.sql
+ * - AGENT.md security and PDPA requirements
  */
 
 /**
- * ProfileSchema
+ * Patient profile schema
  *
- * For PUT /api/patient/profile.put
- *
- * Fields:
- * - full_name: 2-100 chars
- * - nric: raw input (will be hashed + masked server-side)
- * - dob: YYYY-MM-DD
- * - language: string; constrained at UI-level, stored as text
- * - chas_tier: enum: blue|orange|green|none|unknown
+ * NOTE:
+ * - NRIC is accepted as plain string at API boundary.
+ * - Handler code must:
+ *   - Hash NRIC into nric_hash.
+ *   - Derive nric_masked for display.
+ * - We do NOT expose or persist raw NRIC beyond what is necessary to derive those fields.
  */
 export const ProfileSchema = z.object({
   full_name: z
     .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name must be at most 100 characters'),
+    .min(1, 'Full name is required')
+    .max(200, 'Full name is too long'),
   nric: z
     .string()
-    .min(5, 'NRIC / ID seems too short')
-    .max(20, 'NRIC / ID seems too long'),
+    .min(5, 'NRIC is required')
+    .max(32, 'NRIC looks invalid'),
   dob: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date of birth must be YYYY-MM-DD'),
-  language: z.string().default('en'),
+    .min(4, 'Date of birth is required'),
+  language: z
+    .string()
+    .min(1)
+    .max(16)
+    .default('en'),
   chas_tier: z
     .enum(['blue', 'orange', 'green', 'none', 'unknown'])
     .default('unknown')
@@ -47,19 +43,47 @@ export const ProfileSchema = z.object({
 export type ProfileInput = z.infer<typeof ProfileSchema>;
 
 /**
- * BookAppointmentSchema
+ * Book appointment schema
  *
- * For POST /api/appointments/book.post
- *
- * Fields:
  * - doctor_id: UUID string
- * - scheduled_start: ISO 8601 datetime string
+ * - scheduled_start: ISO string
+ * - reason: optional, short free-text
  */
 export const BookAppointmentSchema = z.object({
-  doctor_id: z.string().uuid(),
+  doctor_id: z
+    .string()
+    .uuid('Invalid doctor'),
   scheduled_start: z
     .string()
-    .datetime()
+    .datetime('Invalid timeslot'),
+  reason: z
+    .string()
+    .max(500, 'Reason is too long')
+    .optional()
 });
 
 export type BookAppointmentInput = z.infer<typeof BookAppointmentSchema>;
+
+/**
+ * Utility: safeParse wrapper that normalizes error output
+ */
+export function validateOrThrow<TSchema extends z.ZodTypeAny>(
+  schema: TSchema,
+  data: unknown
+): z.infer<TSchema> {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    const flat = result.error.flatten();
+    const message =
+      flat.formErrors.join('; ') ||
+      Object.values(flat.fieldErrors)
+        .flat()
+        .join('; ') ||
+      'Invalid request payload';
+    const error = new Error(message);
+    // Attach details for API handlers to inspect/log if needed.
+    (error as any).details = flat;
+    throw error;
+  }
+  return result.data;
+}
