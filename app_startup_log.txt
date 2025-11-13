@@ -12,7 +12,7 @@ $ npm run build
    Creating an optimized production build ...
  ✓ Compiled successfully
  ✓ Collecting page data    
- ✓ Generating static pages (30/30)
+ ✓ Generating static pages (35/35)
  ✓ Collecting build traces    
  ✓ Finalizing page optimization    
 
@@ -28,9 +28,10 @@ Route (pages)                             Size     First Load JS
 ├ ƒ /api/slots/index.get                  0 B            88.6 kB
 ├ ƒ /api/staff/appointment-status.post    0 B            88.6 kB
 ├ ƒ /api/staff/appointments.get           0 B            88.6 kB
-├ ○ /book                                 8.61 kB         192 kB
+├ ○ /book                                 8.62 kB         193 kB
 ├ ○ /login                                2.63 kB         161 kB
-└ ○ /profile                              16.4 kB         200 kB
+├ ○ /profile                              16.5 kB         201 kB
+└ ○ /staff/appointments                   5.18 kB         175 kB
 + First Load JS shared by all             90.7 kB
   ├ chunks/framework-64ad27b21261a9ce.js  44.8 kB
   ├ chunks/main-b14011096fd3702e.js       34.7 kB
@@ -38,5 +39,4 @@ Route (pages)                             Size     First Load JS
 
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
-
 
