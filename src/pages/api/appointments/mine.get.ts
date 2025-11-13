@@ -1,25 +1,33 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { requireAuth } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabaseServer';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * GET /api/appointments/mine.get
  *
- * Returns upcoming + past appointments for the authenticated patient,
- * scoped strictly to their own patient_profile.
+ * Responsibilities:
+ * - Return appointments belonging to the authenticated patient.
+ * - Rely on:
+ *   - Supabase Auth for identity.
+ *   - patient_profiles.user_id mapping.
+ *   - RLS on appointments for defense in depth.
  *
- * Security:
- * - Requires auth.
- * - Resolves patient_profiles.id by user_id = auth user id.
- * - Relies on RLS and explicit filtering.
+ * Behavior:
+ * - 200: { appointments: [...] } with minimal fields for patient view.
+ * - 401: if not authenticated.
+ *
+ * Notes:
+ * - Only upcoming and recent appointments are relevant for patients.
+ *   For MVP, we return all appointments linked to the caller, ordered by scheduled_start.
  */
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ): Promise<void> {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).end();
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
@@ -32,44 +40,49 @@ export default async function handler(
   }
 
   try {
-    // 1) Resolve patient_profile for this user
+    // Find patient_profile for this user
     const { data: profile, error: profileError } = await supabaseServer
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
-      .maybeSingle();
+      .single();
 
-    if (profileError) {
-      // eslint-disable-next-line no-console
-      console.error('Error fetching patient profile in appointments/mine:', profileError);
-      res.status(500).json({ error: 'Failed to fetch appointments' });
-      return;
-    }
-
-    if (!profile) {
-      // No profile yet → no appointments
+    if (profileError || !profile) {
+      // No profile ⇒ no appointments to show
       res.status(200).json({ appointments: [] });
       return;
     }
 
-    // 2) Fetch this patient's appointments
+    // Fetch appointments for this patient.
+    // RLS additionally ensures they only see their own.
     const { data, error } = await supabaseServer
       .from('appointments')
-      .select('id, scheduled_start, status, queue_number, doctor_id')
+      .select(
+        `
+        id,
+        scheduled_start,
+        status,
+        doctor:doctors ( name )
+      `
+      )
       .eq('patient_id', profile.id)
       .order('scheduled_start', { ascending: true });
 
     if (error) {
       // eslint-disable-next-line no-console
-      console.error('Error fetching patient appointments:', error);
-      res.status(500).json({ error: 'Failed to fetch appointments' });
+      console.error('Error fetching patient appointments', error);
+      res
+        .status(500)
+        .json({ error: 'Failed to load your appointments.' });
       return;
     }
 
-    res.status(200).json({ appointments: data ?? [] });
+    res.status(200).json({
+      appointments: data || []
+    });
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('Unexpected error in appointments/mine.get:', e);
+    console.error('Unexpected error in appointments.mine.get', e);
     res.status(500).json({ error: 'Internal server error' });
   }
 }

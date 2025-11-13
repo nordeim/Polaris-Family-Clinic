@@ -1,24 +1,28 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { requireAuth } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabaseServer';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * GET /api/patient/profile.get
  *
- * Returns the current patient's profile (masked NRIC), or null if not created.
+ * Responsibilities:
+ * - Return the authenticated user's patient profile, if it exists.
+ * - Never return raw NRIC.
+ * - Shape response for direct consumption by /profile page.
  *
- * Security:
- * - Requires authenticated Supabase user.
- * - Uses user.id -> patient_profiles.user_id mapping.
- * - Relies on RLS plus explicit equality on user_id.
+ * Response:
+ * - 200 { profile: { id, full_name, nric_masked, dob, language, chas_tier } }
+ * - 404 { error: 'Profile not found' } if no row exists.
+ * - 401 { error: 'Unauthorized' } if unauthenticated.
  */
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ): Promise<void> {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).end();
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
@@ -35,19 +39,30 @@ export default async function handler(
       .from('patient_profiles')
       .select('id, full_name, nric_masked, dob, language, chas_tier')
       .eq('user_id', user.id)
-      .maybeSingle();
+      .single();
 
     if (error) {
+      if (error.code === 'PGRST116' || error.details?.includes('Results contain 0 rows')) {
+        // No profile yet
+        res.status(404).json({ error: 'Profile not found' });
+        return;
+      }
+
       // eslint-disable-next-line no-console
-      console.error('Error fetching patient profile:', error);
-      res.status(500).json({ error: 'Failed to fetch profile' });
+      console.error('Error fetching patient profile', error);
+      res.status(500).json({ error: 'Failed to load profile' });
       return;
     }
 
-    res.status(200).json({ profile: data || null });
+    if (!data) {
+      res.status(404).json({ error: 'Profile not found' });
+      return;
+    }
+
+    res.status(200).json({ profile: data });
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('Unexpected error in patient/profile.get:', e);
+    console.error('Unexpected error in profile.get', e);
     res.status(500).json({ error: 'Internal server error' });
   }
 }

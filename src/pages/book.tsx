@@ -34,7 +34,7 @@ type PatientProfile = {
 
 function useAuthAndProfile() {
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<unknown | null>(null);
+  const [session, setSession] = useState<null | { user: { id: string } }>(null);
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,7 +124,7 @@ export default function BookPage() {
               </Alert>
             )}
 
-            {!loading && !session && !error && (
+            {!loading && session === null && !error && (
               <div className="ui-card ui-card--elevated">
                 <Title order={3}>Sign in to book your appointment</Title>
                 <Text size="sm" c="dimmed" mt={4}>

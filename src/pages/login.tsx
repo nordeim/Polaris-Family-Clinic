@@ -33,27 +33,37 @@ import { UiButton } from '@/components/ui/button';
  *   - SMS/OTP or magic link auth enabled per clinic preference.
  */
 
-type LoginFormValues = {
-  email: string;
-};
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = supabaseClient();
+
+  // Guard against missing env vars during build/SSR:
+  // - In real deployments, NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+  //   must be set (see .env.example and README).
+  // - During static export or misconfigured environments, we avoid throwing and
+  //   instead render a graceful error message.
+  const safeSupabase =
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      ? supabaseClient()
+      : null;
   const redirectTo =
     (typeof router.query.redirect === 'string' && router.query.redirect) || '/book';
 
-  const [email, setEmail] = React.useState('');
-  const [status, setStatus] = React.useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [error, setError] = React.useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>(
+    'idle'
+  );
+  const [error, setError] = useState<string | null>(null);
 
   // If already logged in, redirect to intended target
   useEffect(() => {
     let cancelled = false;
     async function checkSession() {
+      if (!safeSupabase) return;
       const {
         data: { session }
-      } = await supabase.auth.getSession();
+      } = await safeSupabase.auth.getSession();
       if (!cancelled && session) {
         router.replace(redirectTo);
       }
@@ -77,11 +87,20 @@ export default function LoginPage() {
       return;
     }
 
+    // If Supabase client is not available (e.g., missing env vars),
+    // fail gracefully instead of throwing during build/SSR.
+    if (!safeSupabase) {
+      setError(
+        'Sign-in is temporarily unavailable due to configuration. Please try again later.'
+      );
+      return;
+    }
+
     setStatus('sending');
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await safeSupabase.auth.signInWithOtp({
         email: trimmed,
         options: {
           emailRedirectTo:
@@ -138,7 +157,6 @@ export default function LoginPage() {
                 />
 
                 <UiButton
-                  as="button"
                   variant="primary"
                   size="lg"
                   disabled={status === 'sending'}
