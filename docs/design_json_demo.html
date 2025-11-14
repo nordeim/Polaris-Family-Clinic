@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design System Style Guide - LimeAura Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static@0.321.0/font/lucide.min.css">
+    <style>
+        :root {
+            --backgroundMain: #D6F25F;
+            --surfacePrimary: #FFFFFF;
+            --surfaceSoft: #F9FAFB;
+            --textPrimary: #111111;
+            --textSecondary: #555555;
+            --textMuted: #9CA3AF;
+            --accentPrimary: #7B3EFF;
+            --accentPrimarySoft: #EDE7FF;
+            --accentSecondary: #00C6AE;
+            --accentYellow: #FFB020;
+            --borderSubtle: #F0F0F0;
+            --success: #10B981;
+            --warning: #FBBF24;
+            --danger: #EF4444;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--backgroundMain);
+        }
+        
+        .card {
+            background-color: var(--surfacePrimary);
+            border-radius: 28px;
+            box-shadow: 0 10px 25px 0 rgba(15, 23, 42, 0.06);
+            padding: 24px;
+        }
+        
+        .card-hover:hover {
+            box-shadow: 0 14px 30px 0 rgba(15, 23, 42, 0.10);
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary {
+            background-color: var(--accentPrimary);
+            color: white;
+            border-radius: 9999px;
+            padding: 9px 18px;
+            font-weight: 500;
+            font-size: 14px;
+            box-shadow: 0 8px 18px 0 rgba(123, 62, 255, 0.25);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #6B2FFF;
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: var(--textPrimary);
+            border: 1px solid var(--borderSubtle);
+            border-radius: 9999px;
+            padding: 9px 18px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--surfaceSoft);
+        }
+        
+        .btn-secondary:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-ghost {
+            background-color: transparent;
+            color: var(--textPrimary);
+            border-radius: 9999px;
+            padding: 9px 18px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-ghost:hover {
+            background-color: var(--surfaceSoft);
+        }
+        
+        .btn-ghost:active {
+            transform: scale(0.98);
+        }
+        
+        .tag {
+            background-color: var(--surfaceSoft);
+            color: var(--textPrimary);
+            border-radius: 9999px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge {
+            background-color: var(--accentPrimary);
+            color: white;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            font-size: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .avatar {
+            border-radius: 50%;
+            border: 2px solid var(--surfacePrimary);
+        }
+        
+        .toggle {
+            position: relative;
+            display: inline-flex;
+            height: 24px;
+            width: 44px;
+            align-items: center;
+            border-radius: 9999px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .toggle-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .toggle-track {
+            position: absolute;
+            display: inline-block;
+            height: 24px;
+            width: 44px;
+            border-radius: 9999px;
+            background-color: #E5E7EB;
+            transition: background-color 0.2s ease;
+        }
+        
+        .toggle-handle {
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+        
+        .toggle-input:checked + .toggle-track {
+            background-color: var(--accentPrimary);
+        }
+        
+        .toggle-input:checked + .toggle-track + .toggle-handle {
+            transform: translateX(20px);
+        }
+        
+        .text-h1 {
+            font-size: 28px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        .text-h2 {
+            font-size: 22px;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+        
+        .text-h3 {
+            font-size: 18px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        
+        .text-body {
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+        
+        .text-body-bold {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        
+        .text-label {
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.3;
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .animate-scale-in {
+            animation: scaleIn 0.2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .toast-notification {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 50;
+            min-width: 300px;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 16px;
+        }
+        
+        .color-swatch {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            border: 2px solid var(--borderSubtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .spacing-demo {
+            background-color: var(--accentPrimary);
+            height: 16px;
+            border-radius: 4px;
+        }
+        
+        .radius-demo {
+            background-color: var(--accentPrimary);
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .shadow-demo {
+            width: 80px;
+            height: 80px;
+            background-color: var(--surfacePrimary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--textSecondary);
+        }
+    </style>
+</head>
+<body>
+    <div x-data="styleGuide()" class="min-h-screen">
+        <!-- Header -->
+        <div class="p-10">
+            <div class="max-w-7xl mx-auto">
+                <div class="mb-12">
+                    <h1 class="text-h1 text-textPrimary mb-4">
+                        Design System Style Guide
+                    </h1>
+                    <p class="text-body text-textSecondary max-w-2xl">
+                        A comprehensive showcase of all UI components following the LimeAura productivity dashboard design language. 
+                        This guide demonstrates the bright, soft, modern aesthetic with high contrast between vivid pastel backgrounds and clean white cards.
+                    </p>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="flex space-x-1 mb-8 bg-surfaceSoft rounded-pill p-1 inline-flex">
+                    <button @click="activeTab = 'components'" 
+                            :class="activeTab === 'components' ? 'bg-accentPrimary text-white' : 'text-textPrimary hover:bg-white'"
+                            class="px-6 py-2 rounded-pill text-body-bold transition-all duration-200">
+                        Components
+                    </button>
+                    <button @click="activeTab = 'tokens'" 
+                            :class="activeTab === 'tokens' ? 'bg-accentPrimary text-white' : 'text-textPrimary hover:bg-white'"
+                            class="px-6 py-2 rounded-pill text-body-bold transition-all duration-200">
+                        Design Tokens
+                    </button>
+                    <button @click="activeTab = 'guidelines'" 
+                            :class="activeTab === 'guidelines' ? 'bg-accentPrimary text-white' : 'text-textPrimary hover:bg-white'"
+                            class="px-6 py-2 rounded-pill text-body-bold transition-all duration-200">
+                        Guidelines
+                    </button>
+                </div>
+
+                <!-- Main Content -->
+                <div class="space-y-8">
+                    <!-- Components Tab -->
+                    <div x-show="activeTab === 'components'" class="animate-fade-in">
+                        <!-- Overview Stats -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                            <div class="card text-center">
+                                <div class="text-3xl font-bold text-accentPrimary mb-2">28</div>
+                                <div class="text-body text-textSecondary">Total Components</div>
+                            </div>
+                            <div class="card text-center">
+                                <div class="text-3xl font-bold text-success mb-2">100%</div>
+                                <div class="text-body text-textSecondary">Design Coverage</div>
+                            </div>
+                            <div class="card text-center">
+                                <div class="text-3xl font-bold text-accentSecondary mb-2">15</div>
+                                <div class="text-body text-textSecondary">Color Tokens</div>
+                            </div>
+                            <div class="card text-center">
+                                <div class="text-3xl font-bold text-warning mb-2">8</div>
+                                <div class="text-body text-textSecondary">Spacing Levels</div>
+                            </div>
+                        </div>
+
+                        <!-- Component Sections -->
+                        <div class="space-y-12">
+                            <!-- Cards Section -->
+                            <div class="card">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h2 class="text-h2 text-textPrimary">Cards & Containers</h2>
+                                    <span class="badge">6 variants</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <!-- Standard Card -->
+                                    <div class="space-y-4">
+                                        <h3 class="text-h3 text-textSecondary">Standard Card</h3>
+                                        <div class="card card-hover">
+                                            <div class="flex items-center justify-between mb-4">
+                                                <h4 class="text-body-bold text-textPrimary">Project Overview</h4>
+                                                <button class="text-textSecondary hover:text-textPrimary transition-colors">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <p class="text-body text-textSecondary mb-4">
+                                                This is a standard card component with hover effects and proper spacing.
+                                            </p>
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-2">
+                                                    <div class="w-2 h-2 bg-success rounded-full"></div>
+                                                    <span class="text-label text-textSecondary">Active</span>
+                                                </div>
+                                                <span class="text-body text-textSecondary">Due: Dec 15</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Profile Card -->
+                                    <div class="space-y-4">
+                                        <h3 class="text-h3 text-textSecondary">Profile Card</h3>
+                                        <div class="card">
+                                            <div class="flex items-start justify-between mb-4">
+                                                <div class="flex items-center space-x-4">
+                                                    <div class="avatar w-16 h-16 bg-gradient-to-br from-accentPrimary to-accentSecondary"></div>
+                                                    <div>
+                                                        <h4 class="text-h3 text-textPrimary">Sarah Johnson</h4>
+                                                        <p class="text-body text-textSecondary">Product Designer</p>
+                                                    </div>
+                                                </div>
+                                                <button class="text-textSecondary hover:text-textPrimary transition-colors">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="flex flex-wrap gap-2 mb-4">
+                                                <span class="tag">UI Design</span>
+                                                <span class="tag">Research</span>
+                                                <span class="tag">Prototyping</span>
+                                            </div>
+                                            <div class="flex items-center justify-between text-body text-textSecondary">
+                                                <span>15 projects completed</span>
+                                                <span>Member since 2023</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Stats Card -->
+                                    <div class="space-y-4">
+                                        <h3 class="text-h3 text-textSecondary">Stats Card</h3>
+                                        <div class="card">
+                                            <div class="flex items-center justify-between mb-4">
+                                                <h4 class="text-body-bold text-textPrimary">Performance Metrics</h4>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                                </svg>
+                                            </div>
+                                            <div class="space-y-3">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-body text-textSecondary">Completion Rate</span>
+                                                    <span class="text-h3 text-textPrimary">94%</span>
+                                                </div>
+                                                <div class="w-full bg-surfaceSoft rounded-full h-2">
+                                                    <div class="bg-success h-2 rounded-full" style="width: 94%"></div>
+                                                </div>
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-body text-textSecondary">Team Satisfaction</span>
+                                                    <span class="text-h3 text-textPrimary">4.8/5</span>
+                                                </div>
+                                                <div class="w-full bg-surfaceSoft rounded-full h-2">
+                                                    <div class="bg-accentPrimary h-2 rounded-full" style="width: 96%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Buttons Section -->
+                            <div class="card">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h2 class="text-h2 text-textPrimary">Buttons & Actions</h2>
+                                    <span class="badge">12 variants</span>
+                                </div>
+
+                                <div class="space-y-8">
+                                    <!-- Primary Buttons -->
+                                    <div>
+                                        <h3 class="text-h3 text-textSecondary mb-4">Primary Buttons</h3>
+                                        <div class="flex flex-wrap gap-4">
+                                            <button class="btn-primary">Create Project</button>
+                                            <button class="btn-primary">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-2">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
+                                                Add New
+                                            </button>
+                                            <button class="btn-primary" disabled>
+                                                Disabled Primary
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Secondary Buttons -->
+                                    <div>
+                                        <h3 class="text-h3 text-textSecondary mb-4">Secondary Buttons</h3>
+                                        <div class="flex flex-wrap gap-4">
+                                            <button class="btn-secondary">Cancel</button>
+                                            <button class="btn-secondary">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-2">
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                                </svg>
+                                                Settings
+                                            </button>
+                                            <button class="btn-secondary" disabled>
+                                                Disabled Secondary
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Icon Buttons -->
+                                    <div>
+                                        <h3 class="text-h3 text-textSecondary mb-4">Icon Buttons</h3>
+                                        <div class="flex flex-wrap gap-4 items-center">
+                                            <button class="w-10 h-10 rounded-full bg-white shadow-card hover:shadow-floating transition-all duration-200 flex items-center justify-center">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--textSecondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="w-10 h-10 rounded-full bg-white shadow-card hover:shadow-floating transition-all duration-200 flex items-center justify-center">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                                </svg>
+                                            </button>
+                                            <button class="w-10 h-10 rounded-full bg-accentPrimary hover:bg-[#6B2FFF] transition-all duration-200 flex items-center justify-center">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Forms Section -->
+                            <div class="card">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h2 class="text-h2 text-textPrimary">Forms & Inputs</h2>
+                                    <span class="badge">8 variants</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <!-- Text Inputs -->
+                                    <div class="space-y-6">
+                                        <h3 class="text-h3 text-textSecondary">Text Inputs</h3>
+                                        
+                                        <div class="space-y-2">
+                                            <label class="text-body-bold text-textPrimary">Full Name</label>
+                                            <div class="relative">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--textSecondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                    <circle cx="12" cy="7" r="4"></circle>
+                                                </svg>
+                                                <input type="text" placeholder="Enter your full name" value="Sarah Johnson" 
+                                                       class="w-full pl-10 pr-4 py-3 bg-surfaceSoft rounded-pill border border-borderSubtle focus:border-accentPrimary focus:outline-none focus:ring-2 focus:ring-accentPrimarySoft transition-all duration-200">
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <label class="text-body-bold text-textPrimary">Email Address</label>
+                                            <div class="relative">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--textSecondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                                </svg>
+                                                <input type="email" placeholder="Enter your email" value="sarah@example.com"
+                                                       class="w-full pl-10 pr-4 py-3 bg-surfaceSoft rounded-pill border border-borderSubtle focus:border-accentPrimary focus:outline-none focus:ring-2 focus:ring-accentPrimarySoft transition-all duration-200">
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <label class="text-body-bold text-textPrimary">Password</label>
+                                            <div class="relative">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--textSecondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                                    <circle cx="12" cy="16" r="1"></circle>
+                                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                                </svg>
+                                                <input type="password" placeholder="Enter secure password" value="••••••••••••"
+                                                       class="w-full pl-10 pr-4 py-3 bg-surfaceSoft rounded-pill border border-borderSubtle focus:border-accentPrimary focus:outline-none focus:ring-2 focus:ring-accentPrimarySoft transition-all duration-200">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Select & Dropdown -->
+                                    <div class="space-y-6">
+                                        <h3 class="text-h3 text-textSecondary">Select & Dropdown</h3>
+                                        
+                                        <div class="space-y-2">
+                                            <label class="text-body-bold text-textPrimary">Country</label>
+                                            <select class="w-full px-4 py-3 bg-surfaceSoft rounded-pill border border-borderSubtle focus:border-accentPrimary focus:outline-none focus:ring-2 focus:ring-accentPrimarySoft transition-all duration-200 appearance-none">
+                                                <option>United States</option>
+                                                <option>Canada</option>
+                                                <option>United Kingdom</option>
+                                                <option>Australia</option>
+                                                <option>Germany</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <label class="text-body-bold text-textPrimary">Team Size</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <button class="px-4 py-2 text-body bg-surfaceSoft border border-borderSubtle rounded-pill hover:border-accentPrimary hover:bg-accentPrimarySoft transition-all duration-200">
+                                                    1-5
+                                                </button>
+                                                <button class="px-4 py-2 text-body bg-surfaceSoft border border-borderSubtle rounded-pill hover:border-accentPrimary hover:bg-accentPrimarySoft transition-all duration-200">
+                                                    6-20
+                                                </button>
+                                                <button class="px-4 py-2 text-body bg-surfaceSoft border border-borderSubtle rounded-pill hover:border-accentPrimary hover:bg-accentPrimarySoft transition-all duration-200">
+                                                    21-50
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <label class="text-body-bold text-textPrimary">Search Input</label>
+                                            <div class="relative">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--textSecondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                                                    <circle cx="11" cy="11" r="8"></circle>
+                                                    <path d="m21 21-4.35-4.35"></path>
+                                                </svg>
+                                                <input type="search" placeholder="Search projects, tasks, or people..."
+                                                       class="w-full pl-10 pr-4 py-3 bg-surfaceSoft rounded-pill border border-borderSubtle focus:border-accentPrimary focus:outline-none focus:ring-2 focus:ring-accentPrimarySoft transition-all duration-200">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Data Display Section -->
+                            <div class="card">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h2 class="text-h2 text-textPrimary">Data Display</h2>
+                                    <span class="badge">6 variants</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <!-- Calendar -->
+                                    <div class="space-y-6">
+                                        <h3 class="text-h3 text-textSecondary">Calendar</h3>
+                                        <div class="card">
+                                            <div class="flex items-center justify-between mb-6">
+                                                <h4 class="text-h3 text-textPrimary">December 2024</h4>
+                                                <div class="flex items-center space-x-2">
+                                                    <button class="p-2 text-textSecondary hover:text-textPrimary hover:bg-surfaceSoft rounded-lg transition-all duration-200">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <polyline points="15 18 9 12 15 6"></polyline>
+                                                        </svg>
+                                                    </button>
+                                                    <button class="p-2 text-textSecondary hover:text-textPrimary hover:bg-surfaceSoft rounded-lg transition-all duration-200">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-7 gap-1 mb-4">
+                                                <div class="text-center text-label text-textSecondary py-2">Sun</div>
+                                                <div class="text-center text-label text-textSecondary py-2">Mon</div>
+                                                <div class="text-center text-label text-textSecondary py-2">Tue</div>
+                                                <div class="text-center text-label text-textSecondary py-2">Wed</div>
+                                                <div class="text-center text-label text-textSecondary py-2">Thu</div>
+                                                <div class="text-center text-label text-textSecondary py-2">Fri</div>
+                                                <div class="text-center text-label text-textSecondary py-2">Sat</div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-7 gap-1">
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">1</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">2</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">3</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">4</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">5</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">6</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">7</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">8</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">9</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">10</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">11</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">12</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">13</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">14</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-white bg-accentPrimary rounded-lg">15</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">16</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">17</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">18</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">19</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">20</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">21</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">22</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">23</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">24</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">25</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">26</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">27</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">28</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">29</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">30</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textPrimary hover:bg-surfaceSoft rounded-lg">31</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">1</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">2</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">3</button>
+                                                <button class="aspect-square flex items-center justify-center text-body text-textMuted rounded-lg">4</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Progress Indicators -->
+                                    <div class="space-y-6">
+                                        <h3 class="text-h3 text-textSecondary">Progress Indicators</h3>
+                                        <div class="card">
+                                            <h4 class="text-h3 text-textPrimary mb-6">Project Progress</h4>
+                                            
+                                            <div class="space-y-6">
+                                                <div>
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <span class="text-body text-textSecondary">Overall Completion</span>
+                                                        <span class="text-body-bold text-accentPrimary">75%</span>
+                                                    </div>
+                                                    <div class="w-full bg-surfaceSoft rounded-full h-3">
+                                                        <div class="bg-gradient-to-r from-accentPrimary to-accentSecondary h-3 rounded-full transition-all duration-500" style="width: 75%"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div>
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <span class="text-body text-textSecondary">Design Phase</span>
+                                                        <span class="text-body-bold text-success">100%</span>
+                                                    </div>
+                                                    <div class="w-full bg-surfaceSoft rounded-full h-2">
+                                                        <div class="bg-success h-2 rounded-full" style="width: 100%"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div>
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <span class="text-body text-textSecondary">Development</span>
+                                                        <span class="text-body-bold text-warning">60%</span>
+                                                    </div>
+                                                    <div class="w-full bg-surfaceSoft rounded-full h-2">
+                                                        <div class="bg-warning h-2 rounded-full" style="width: 60%"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Design Tokens Tab -->
+                    <div x-show="activeTab === 'tokens'" class="animate-fade-in">
+                        <!-- Color Tokens -->
+                        <div class="card">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-h2 text-textPrimary">Color Tokens</h2>
+                                <span class="badge">14 tokens</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="color-swatch mb-3" style="background-color: var(--backgroundMain)">BG</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">backgroundMain</h4>
+                                    <p class="text-label text-textSecondary mb-2">Main background color</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">#D6F25F</code>
+                                </div>
+                                
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="color-swatch mb-3" style="background-color: var(--surfacePrimary)">SP</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">surfacePrimary</h4>
+                                    <p class="text-label text-textSecondary mb-2">Primary surface color</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">#FFFFFF</code>
+                                </div>
+                                
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="color-swatch mb-3" style="background-color: var(--accentPrimary)">AP</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">accentPrimary</h4>
+                                    <p class="text-label text-textSecondary mb-2">Primary accent color</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">#7B3EFF</code>
+                                </div>
+                                
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="color-swatch mb-3" style="background-color: var(--success)">SU</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">success</h4>
+                                    <p class="text-label text-textSecondary mb-2">Success color</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">#10B981</code>
+                                </div>
+                                
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="color-swatch mb-3" style="background-color: var(--warning)">WA</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">warning</h4>
+                                    <p class="text-label text-textSecondary mb-2">Warning color</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">#FBBF24</code>
+                                </div>
+                                
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="color-swatch mb-3" style="background-color: var(--danger)">DA</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">danger</h4>
+                                    <p class="text-label text-textSecondary mb-2">Danger color</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">#EF4444</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spacing Tokens -->
+                        <div class="card mt-8">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-h2 text-textPrimary">Spacing Tokens</h2>
+                                <span class="badge">8 tokens</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="flex items-center space-x-3 mb-3">
+                                        <div class="spacing-demo" style="width: 4px;"></div>
+                                        <div class="spacing-demo" style="width: 6px;"></div>
+                                        <div class="spacing-demo" style="width: 8px;"></div>
+                                    </div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">Spacing Scale</h4>
+                                    <p class="text-label text-textSecondary mb-2">4px to 32px</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">xxs to xxxl</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Border Radius Tokens -->
+                        <div class="card mt-8">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-h2 text-textPrimary">Border Radius Tokens</h2>
+                                <span class="badge">6 tokens</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="radius-demo mb-3" style="border-radius: 9999px;">Pill</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">pill</h4>
+                                    <p class="text-label text-textSecondary mb-2">Pill-shaped radius</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">9999px</code>
+                                </div>
+                                
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="radius-demo mb-3" style="border-radius: 28px;">Card</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">cardLarge</h4>
+                                    <p class="text-label text-textSecondary mb-2">Large card radius</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">28px</code>
+                                </div>
+                                
+                                <div class="border border-borderSubtle rounded-lg p-4 hover:shadow-card transition-all duration-200">
+                                    <div class="radius-demo mb-3" style="border-radius: 20px;">Med</div>
+                                    <h4 class="text-body-bold text-textPrimary mb-1">cardMedium</h4>
+                                    <p class="text-label text-textSecondary mb-2">Medium card radius</p>
+                                    <code class="text-body text-accentPrimary bg-accentPrimarySoft px-2 py-1 rounded">20px</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guidelines Tab -->
+                    <div x-show="activeTab === 'guidelines'" class="animate-fade-in">
+                        <div class="card">
+                            <h2 class="text-h2 text-textPrimary mb-6">Design Principles</h2>
+                            
+                            <div class="space-y-8">
+                                <div>
+                                    <h3 class="text-h3 text-textPrimary mb-4">Visual Tone</h3>
+                                    <ul class="space-y-2 text-body text-textSecondary">
+                                        <li>• Friendly, optimistic, and modern</li>
+                                        <li>• Use a bright, pastel lime canvas contrasted with crisp white cards</li>
+                                        <li>• Communicate clarity and trustworthiness through clean typography and orderly layout</li>
+                                    </ul>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-h3 text-textPrimary mb-4">Composition</h3>
+                                    <ul class="space-y-2 text-body text-textSecondary">
+                                        <li>• Cards float on the colored background; no heavy frames around the entire interface</li>
+                                        <li>• Use consistent large radii and spacing to create a cohesive system</li>
+                                        <li>• Group related information into self-contained cards with clear headers</li>
+                                    </ul>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-h3 text-textPrimary mb-4">Color Usage</h3>
+                                    <ul class="space-y-2 text-body text-textSecondary">
+                                        <li>• Accent colors exist to indicate importance or interactivity, not decoration</li>
+                                        <li>• Predominantly white content areas; the lime background is always visible around them</li>
+                                        <li>• Minimal simultaneous accent usage to avoid noise</li>
+                                    </ul>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-h3 text-textPrimary mb-4">Typography Usage</h3>
+                                    <ul class="space-y-2 text-body text-textSecondary">
+                                        <li>• Limit to one primary sans-serif family with subtle weight variations</li>
+                                        <li>• Short, scannable copy; avoid long paragraphs inside cards</li>
+                                        <li>• Clear typographic hierarchy: title, short description, interactive elements</li>
+                                    </ul>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-h3 text-textPrimary mb-4">Interaction</h3>
+                                    <ul class="space-y-2 text-body text-textSecondary">
+                                        <li>• Micro-interactions are smooth and subtle with easing; avoid flashy animations</li>
+                                        <li>• Hover and active states rely on small elevation/brightness changes, not dramatic color shifts</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div x-show="toast.show" x-transition class="toast-notification animate-scale-in">
+            <div :class="toast.type === 'success' ? 'border-success' : toast.type === 'error' ? 'border-danger' : toast.type === 'warning' ? 'border-warning' : 'border-accentPrimary'"
+                 class="bg-surfacePrimary rounded-card shadow-floating p-4 flex items-center space-x-3 border-l-4">
+                <svg x-show="toast.type === 'success'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <svg x-show="toast.type === 'error'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-body text-textPrimary" x-text="toast.message"></p>
+                </div>
+                <button @click="toast.show = false" class="text-textSecondary hover:text-textPrimary transition-colors">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function styleGuide() {
+        return {
+            activeTab: 'components',
+            toast: {
+                show: false,
+                type: 'success',
+                message: ''
+            },
+            
+            showToast(type, message) {
+                this.toast.type = type;
+                this.toast.message = message;
+                this.toast.show = true;
+                
+                setTimeout(() => {
+                    this.toast.show = false;
+                }, 3000);
+            }
+        }
+    }
+    </script>
+</body>
+</html>
